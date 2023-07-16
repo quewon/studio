@@ -13,6 +13,18 @@ var playheadTime = 0;
 var playing = false;
 var clipDragging;
 
+function refocus() {
+  ui.input.focus();
+
+  var range = document.createRange();
+  var sel = window.getSelection();
+
+  range.setStart(ui.input.firstChild || ui.input, ui.input.textContent.length);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 var settings = {
   startRecordOnInput: false,
   clearWithEnter: false
@@ -20,7 +32,8 @@ var settings = {
 function toggleSetting(settingName, button) {
   button.toggleAttribute("checked");
   settings[settingName] = button.getAttribute("checked") != null;
-  ui.input.focus();
+
+  refocus();
 }
 
 var currentTrack;
@@ -206,7 +219,7 @@ ui.timelineRuler.addEventListener("mousedown", function(e) {
   draggingPlayhead = true;
 });
 
-document.addEventListener("resize", function() {
+window.addEventListener("resize", function() {
   timelineRulerRect = ui.timelineRuler.getBoundingClientRect();
 });
 
@@ -218,4 +231,15 @@ function movePlayhead(mousePosition) {
 
 function dropPlayhead() {
   draggingPlayhead = false;
+}
+
+// track management
+
+function createTrack() {
+  new Track();
+  ui.input.innerHTML = "";
+}
+
+function switchToTrack(index) {
+  currentTrack = allTracks[index];
 }

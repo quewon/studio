@@ -56,7 +56,7 @@ class Track {
     this.recordStartTime = startTime;
 
     document.body.classList.add("recording");
-    ui.input.focus();
+    refocus();
   }
 
   stopRecording() {
@@ -243,10 +243,10 @@ class Clip {
   }
 
   updateLength() {
-    const clipRatio = this.totalTime / 100;
+    const clipRatio = this.trimmedTime / 100;
 
     for (let e of this.log) {
-      e.domElement.style.left = (e.localTimeStamp / clipRatio)+"%";
+      e.domElement.style.left = ((e.localTimeStamp - this.trimStart) / clipRatio)+"%";
     }
   }
 
@@ -267,6 +267,26 @@ class Clip {
   }
 }
 
+function getCurrentInputState() {
+  var output = {
+    innerHTML: ui.input.innerHTML,
+    selectionStart: 0,
+    selectionEnd: 0
+  };
+
+  var selection = document.getSelection();
+
+
+  if (selection.anchorNode && (selection.anchorNode == ui.input || selection.anchorNode.parentNode == ui.input)) {
+    output.selectionStart = selection.anchorOffset <= selection.focusOffset ? selection.anchorOffset : selection.focusOffset;
+    output.selectionEnd = selection.focusOffset >= selection.anchorOffset ? selection.focusOffset : selection.anchorOffset;
+  } else {
+    output.selectionStart = output.selectionEnd = ui.input.textContent.length;
+  }
+
+  return output;
+}
+
 class RecordedEvent {
   constructor(e, props) {
     this.type = e.type;
@@ -274,14 +294,22 @@ class RecordedEvent {
 
     if ('localTimeStamp' in props) {
       this.localTimeStamp = props.localTimeStamp;
-      this.inputFieldContent = ui.input.innerHTML;
 
-      var selection = document.getSelection();
-      if (selection.anchorNode && (selection.anchorNode == ui.input || selection.anchorNode.parentNode == ui.input)) {
-        this.selectionStart = selection.anchorOffset <= selection.focusOffset ? selection.anchorOffset : selection.focusOffset;
-        this.selectionEnd = selection.focusOffset >= selection.anchorOffset ? selection.focusOffset : selection.anchorOffset;
+      if (e.type == "keydown") {
+        this.inputFieldContent = null;
+        setTimeout(function() {
+          const state = getCurrentInputState();
+          this.inputFieldContent = state.innerHTML;
+          this.selectionStart = state.selectionStart;
+          this.selectionEnd = state.selectionEnd;
+
+          console.log(document.getSelection());
+        }.bind(this), 0);
       } else {
-        this.selectionStart = this.selectionEnd = ui.input.textContent.length;
+        const state = getCurrentInputState();
+        this.inputFieldContent = state.innerHTML;
+        this.selectionStart = state.selectionStart;
+        this.selectionEnd = state.selectionEnd;
       }
     }
 

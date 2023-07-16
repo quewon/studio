@@ -235,13 +235,13 @@
     <h2 style="margin-bottom: -1.5rem; margin-left: 1.5rem; font-style: italic;">quewon's</h2>
     <h1>live text recording studio</h1>
     <div class="flex" class="noselect">
-      <button onclick="new Track()" name="track"></button>
+      <button onclick="createTrack()" name="track"></button>
       <button onclick="currentTrack.toggleRecording(event)" name="record"></button>
       <button onclick="setPlayheadTime(0)" name="tostart"></button>
       <button onclick="togglePlaying()" name="play"></button>
       <button onclick="setPlayheadTime(totalTime)" name="toend"></button>
       <div class="grow"></div>
-      <button class="noselect" onclick="toggleSetting('startRecordOnInput', this)">start recording on next input</button>
+      <button class="noselect" onclick="toggleSetting('startRecordOnInput', this)">start recording on keydown</button>
       <button class="noselect" onclick="toggleSetting('clearWithEnter', this)">clear with enter</button>
     </div>
     <div id="timeline-info" class="noselect"></div>
