@@ -164,8 +164,8 @@
       .timeline-event.keydown {
         background: black;
       }
-      .timeline-event.mousedown {
-        background: blue;
+      .timeline-event.keyup {
+        background: white;
       }
 
       #event-log, #event-editor {
@@ -178,7 +178,7 @@
       }
 
       #event-log {
-        min-width: 10rem;
+        width: 100%;
       }
       #event-log::before {
         content: "EVENT LOG";
@@ -194,7 +194,7 @@
       }
 
       #event-editor {
-        width: 100%;
+        width: 65rem;
         white-space: pre;
       }
       #event-editor::before {
@@ -262,7 +262,8 @@
 
       .output {
         font-family: monospace;
-        white-space: pre;
+        white-space: pre-wrap;
+        word-break: break-word;
         pointer-events: none;
 
         -webkit-touch-callout: none; /* iOS Safari */
