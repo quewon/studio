@@ -1,6 +1,7 @@
 class Track {
   constructor() {
     this.clips = [];
+    this.orderedEventLog = [];
 
     this.recording = false;
 
@@ -25,7 +26,7 @@ class Track {
 
   handleEvent(e) {
     if (this.recording) {
-      this.currentClip.recordEvent(e, playheadTime);
+      this.currentClip.recordEvent(e);
     }
 
     if (!playing && e.type != "mousemove") {
@@ -34,24 +35,25 @@ class Track {
     }
   }
 
-  toggleRecording() {
+  toggleRecording(e) {
     if (this.recording) {
       this.stopRecording();
     } else {
       if (this.playing) {
         this.stopPlaying();
       }
-      this.startRecording();
+      this.startRecording(e.timeStamp);
     }
   }
 
-  startRecording() {
+  startRecording(startTime) {
     if (playing) {
       stopPlaying();
     }
 
     this.currentClip = new Clip(this, playheadTime);
     this.recording = true;
+    this.recordStartTime = startTime;
 
     document.body.classList.add("recording");
     ui.input.focus();
@@ -65,18 +67,12 @@ class Track {
 
     document.body.classList.remove("recording");
 
+    this.orderEventLog();
     this.updateTotalTime();
   }
 
   updateTotalTime() {
-    var maxClipEnd = 0;
-    for (let clip of this.clips) {
-      const end = clip.trimStart + clip.trimmedTime;
-      if (end > maxClipEnd) {
-        maxClipEnd = end;
-      }
-    }
-    this.setTotalTime(maxClipEnd);
+    this.setTotalTime(this.orderedEventLog.length > 0 ? this.orderedEventLog[this.orderedEventLog.length - 1].globalTime : 0);
   }
 
   setTotalTime(time) {
@@ -102,6 +98,11 @@ class Track {
   }
 
   printState(e) {
+    if (!e) {
+      this.clearState();
+      return;
+    }
+
     if (this.previousPrintedEvent != e) {
       this.outputElement.innerHTML = e.inputFieldContent;
 
@@ -128,50 +129,48 @@ class Track {
 
   clearState() {
     this.outputElement.innerHTML = "";
+    this.previousPrintedEvent = null;
   }
 
   getEventsBetweenLocations(timeA, timeB) {
     let events = [];
 
-    for (let c of this.clips) {
-      for (let e of c.log) {
-        const globalTime = e.localTimeStamp + c.startTime;
-        if (globalTime >= timeA && globalTime < timeB) {
-          events.push(e);
-        }
+    for (let e of this.orderedEventLog) {
+      if (e.globalTime > timeA && e.globalTime <= timeB) {
+        events.push(e.event);
       }
     }
 
     return events;
   }
 
-  getEventAtLocation(time) {
-    if (this.clips.length == 0) return null;
+  orderEventLog() {
+    this.orderedEventLog = [];
 
-    let clip;
-    let e;
-
-    clip = this.clips[0];
     for (let c of this.clips) {
-      if (
-        time >= c.trimStart &&
-        time < c.trimStart + c.trimmedTime
-      ) {
-        clip = c;
-        break;
+      for (let e of c.log) {
+        this.orderedEventLog.push({
+          event: e,
+          globalTime: e.localTimeStamp + c.startTime
+        });
       }
     }
 
-    let localTime = time - clip.trimStart;
+    this.orderedEventLog.sort((a, b) => a.globalTime - b.globalTime);
+  }
 
-    for (let i=0; i<clip.log.length; i++) {
-      const current = clip.log[i];
-      if (localTime >= current.localTimeStamp) {
-        e = current;
+  getStateAtLocation(time) {
+    var events = [];
+
+    for (let e of this.orderedEventLog) {
+      if (e.globalTime <= time) {
+        events.push(e.event);
       }
     }
 
-    return e;
+    if (events.length == 0) return null;
+
+    return events[events.length - 1];
   }
 }
 
@@ -187,7 +186,7 @@ class Clip {
     this.totalTime = 0;
     this.updateTimelineElement();
 
-    this.trimStart = this.startTime;
+    this.trimStart = 0;
     this.trimmedTime = 0;
 
     this.position = 0;
@@ -197,7 +196,6 @@ class Clip {
   drag(e) {
     this.dragInitials = {
       startTime: this.startTime,
-      trimStart: this.trimStart,
       mousePosition: e.pageX
     };
 
@@ -208,15 +206,15 @@ class Clip {
 
   move(mousePosition) {
     // how long is 1px?
-    const pixel = totalTime / document.body.offsetWidth;
+    const pixel = totalTime / timelineRulerRect.width;
     // mouse distance traveled in pixels
     const distance = mousePosition - this.dragInitials.mousePosition;
 
     const dx = Math.ceil(distance * pixel);
 
     this.startTime = this.dragInitials.startTime + dx;
-    this.trimStart = this.dragInitials.trimStart + dx;
 
+    this.track.orderEventLog();
     this.track.updateTotalTime();
 
     this.updateTimelineElement();
@@ -229,7 +227,7 @@ class Clip {
 
   updateTimelineElement() {
     const width = this.trimmedTime / trackRatio;
-    const position = this.trimStart / trackRatio;
+    const position = (this.startTime + this.trimStart) / trackRatio;
 
     if (width != this.width) {
       this.width = width;
@@ -252,17 +250,19 @@ class Clip {
     }
   }
 
-  recordEvent(e, timeStamp) {
+  recordEvent(e) {
+    var localTimeStamp = e.timeStamp - this.track.recordStartTime;
+
     this.log.push(new RecordedEvent(e, {
-      localTimeStamp: timeStamp - this.startTime,
+      localTimeStamp: localTimeStamp,
       parentNode: this.domElement
     }));
 
     if (this.log.length == 1) {
-      this.trimStart = this.startTime + this.log[0].localTimeStamp;
+      this.trimStart = this.log[0].localTimeStamp;
     }
 
-    this.totalTime = timeStamp - this.startTime;
+    this.totalTime = localTimeStamp;
     this.trimmedTime = this.totalTime - this.trimStart;
   }
 }

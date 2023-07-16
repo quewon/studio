@@ -13,6 +13,16 @@ var playheadTime = 0;
 var playing = false;
 var clipDragging;
 
+var settings = {
+  startRecordOnInput: false,
+  clearWithEnter: false
+};
+function toggleSetting(settingName, button) {
+  button.toggleAttribute("checked");
+  settings[settingName] = button.getAttribute("checked") != null;
+  ui.input.focus();
+}
+
 var currentTrack;
 var allTracks = [];
 new Track();
@@ -22,8 +32,18 @@ function handleEvent(e) {
 }
 
 var keydownEvents = [];
-
 ui.input.addEventListener("keydown", function(e) {
+  if (!playing) {
+    if (!currentTrack.recording && settings.startRecordOnInput) {
+      currentTrack.toggleRecording(e);
+    }
+
+    if (e.key == "Enter" && settings.clearWithEnter) {
+      e.preventDefault();
+      ui.input.innerHTML = "";
+    }
+  }
+
   handleEvent(e);
   keydownEvents.push(e);
 });
@@ -50,15 +70,20 @@ document.addEventListener("mousemove", function(e) {
   handleEvent(e);
 
   if (clipDragging) clipDragging.move(e.pageX);
+  if (draggingPlayhead) {
+    movePlayhead(e.pageX);
+  }
 });
 document.addEventListener("mousedown", handleEvent);
 document.addEventListener("mouseup", function(e) {
   handleEvent(e);
 
   if (clipDragging) clipDragging.drop();
+  if (draggingPlayhead) dropPlayhead();
 });
 document.addEventListener("blur", function() {
   if (clipDragging) clipDragging.drop();
+  if (draggingPlayhead) dropPlayhead();
 });
 
 var lastTick = Date.now();
@@ -73,16 +98,15 @@ function tick() {
   currentTrack.update(delta);
   // inputVisualizer.update(delta);
 
-  const previousTime = playheadTime;
   if (playing) {
+    const previousTime = playheadTime;
+
     setPlayheadTime(playheadTime + delta);
     if (playheadTime >= totalTime) {
       setPlayheadTime(totalTime);
       stopPlaying();
     }
-  }
 
-  if (previousTime != playheadTime) {
     for (let track of allTracks) {
       const passedEvents = track.getEventsBetweenLocations(previousTime, playheadTime);
       for (let e of passedEvents) {
@@ -93,14 +117,12 @@ function tick() {
         const lastEvent = passedEvents[passedEvents.length - 1];
         track.printState(lastEvent);
       } else {
-        if (track.clips.length > 0 && playheadTime < track.clips[0].trimStart) {
-          track.clearState();
-        }
+        track.printState(track.getStateAtLocation(playheadTime));
       }
     }
   }
 
-  if (previousTime != playheadTime || playing || currentTrack.recording) {
+  if (playing || currentTrack.recording) {
     updateTimeline();
   }
 }
@@ -109,19 +131,14 @@ function setPlayheadTime(value) {
   const prevValue = playheadTime;
   playheadTime = value;
 
-  if (!playing || prevValue != playheadTime) {
+  if (!playing) {
     for (let track of allTracks) {
-      const currentState = track.getEventAtLocation(playheadTime);
-      if (currentState) {
-        track.printState(currentState);
-      } else {
-        track.clearState();
-      }
+      track.printState(track.getStateAtLocation(playheadTime));
     }
   }
 
   ui.playhead.style.left = (playheadTime / trackRatio)+"%";
-  ui.timelineInfo.textContent = "TRACK LENGTH: "+totalTime+" | PLAYHEAD: "+playheadTime;
+  ui.timelineInfo.textContent = "TRACK LENGTH: "+Math.ceil(totalTime)+" | PLAYHEAD: "+Math.ceil(playheadTime);
 }
 
 function simulateEvent(e) {
@@ -134,7 +151,8 @@ function setTotalTime(value) {
   if (totalTime != value) {
     totalTime = value;
     trackRatio = totalTime / 100;
-    ui.timelineInfo.textContent = "TRACK LENGTH: "+totalTime+" | PLAYHEAD: "+playheadTime;
+    ui.timelineInfo.textContent = "TRACK LENGTH: "+Math.ceil(totalTime)+" | PLAYHEAD: "+Math.ceil(playheadTime);
+    ui.timelineRuler.style.backgroundSize = (1000 / trackRatio)+"% 100%";
 
     for (let track of allTracks) {
       for (let clip of track.clips) {
@@ -152,8 +170,6 @@ function updateTimeline() {
     }
     if (track.currentClip) track.currentClip.updateTimelineElement();
   }
-
-  ui.timelineRuler.style.backgroundSize = (1000 / trackRatio)+"% 100%";
 }
 
 function togglePlaying() {
@@ -163,7 +179,7 @@ function togglePlaying() {
     if (currentTrack.recording) {
       currentTrack.stopRecording();
     }
-    if (playheadTime == totalTime) {
+    if (playheadTime >= totalTime) {
       playheadTime = -1;
     }
     startPlaying();
@@ -179,4 +195,27 @@ function stopPlaying() {
   playing = false;
   document.body.classList.remove("playing");
   // if (inputVisualizer) inputVisualizer.blur();
+}
+
+// moving the playhead
+
+var draggingPlayhead = false;
+var timelineRulerRect = ui.timelineRuler.getBoundingClientRect();
+
+ui.timelineRuler.addEventListener("mousedown", function(e) {
+  draggingPlayhead = true;
+});
+
+document.addEventListener("resize", function() {
+  timelineRulerRect = ui.timelineRuler.getBoundingClientRect();
+});
+
+function movePlayhead(mousePosition) {
+  const position = mousePosition - timelineRulerRect.left;
+  const pixel = totalTime / timelineRulerRect.width;
+  setPlayheadTime(Math.max(Math.min(position * pixel, totalTime), 0));
+}
+
+function dropPlayhead() {
+  draggingPlayhead = false;
 }
