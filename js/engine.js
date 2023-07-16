@@ -71,6 +71,10 @@ document.addEventListener("keydown", function(e) {
     }
   }
 
+  if (!currentTrack.recording && clipSelected && e.key == "Backspace") {
+    clipSelected.remove();
+  }
+
   handleEvent(e);
   keydownEvents.push(e);
 });

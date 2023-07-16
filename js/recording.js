@@ -70,7 +70,6 @@ class Track {
 
     if (currentClip.log.length == 0) {
       currentClip.remove();
-      this.clips.splice(this.clips.length - 1, 1);
     } else {
       currentClip.updateTimelineElement();
       this.orderEventLog();
@@ -216,6 +215,7 @@ class ClipResizeHandles {
 class Clip {
   constructor(track) {
     this.track = track;
+    this.index = this.track.clips.length;
     this.log = [];
 
     // init dom elements
@@ -363,6 +363,11 @@ class Clip {
   }
 
   remove() {
+    if (clipSelected == this) this.deselect();
+    for (let i=this.index + 1; i<this.track.clips.length; i++) {
+      this.track.clips[i].index--;
+    }
+    this.track.clips.splice(this.index, 1);
     this.domElement.remove();
     this.resizeHandles.remove();
   }
