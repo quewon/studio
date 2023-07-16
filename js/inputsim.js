@@ -32,7 +32,12 @@ class InputSimulator {
 
         switch (e.key) {
           case "Enter":
-            insert = "\r\n";
+            if (settings.clearWithEnter) {
+              copy.textContent = "";
+              copy.selectionStart = copy.selectionEnd = 0;
+            } else {
+              insert = "\r\n";
+            }
             break;
 
           case "Shift":
