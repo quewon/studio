@@ -1,7 +1,10 @@
 function createElement(type, props) {
   const element = document.createElement(type);
+
+  props = props || {};
+
   if (props.textContent) element.textContent = props.textContent;
-  if (props.html) element.innerHTML = props.html;
+  if (props.innerHTML) element.innerHTML = props.innerHTML;
   if (props.className) element.className = props.className;
   if (props.parent) props.parent.appendChild(element);
   return element;

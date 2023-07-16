@@ -12,22 +12,7 @@
         margin: auto;
         padding: .5rem;
         max-width: 50rem;
-      }
-      div[contenteditable] {
-        border: 1px solid black;
-        padding: .5rem;
-      }
-      div[contenteditable]:focus {
-        outline: none;
-      }
-      div[contenteditable].recording {
-        border-color: red;
-      }
-      div[contenteditable]:empty::before {
-        content: attr(placeholder);
-        pointer-events: none;
-        font-style: italic;
-        opacity: .5;
+        font-family: serif;
       }
 
       h1 {
@@ -87,6 +72,20 @@
         position: relative;
         width: 100%;
         height: 1.5rem;
+        border-bottom: 1px solid var(--lightergray);
+      }
+      .track .track-selector {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        translate: -100% -50%;
+        height: inherit;
+        width: .5rem;
+        height: .5rem;
+        border-radius: 50%;
+      }
+      .track.selected .track-selector {
+        background: orange;
       }
 
       /* clip */
@@ -94,13 +93,30 @@
         position: absolute;
         height: inherit;
         background: lightgray;
+        opacity: .5;
         border-radius: 5px;
         overflow: hidden;
 
         cursor: grab;
       }
-      .clip:hover {
+      body:not(.resizing) .clip:hover {
         background: var(--lightergray);
+      }
+      .clip.selected {
+        background: orange !important;
+      }
+
+      .resize-handle {
+        position: absolute;
+        height: inherit;
+        width: 3px;
+
+        cursor: ew-resize;
+
+        right: 0;
+      }
+      .resize-handle:first-child {
+        left: 0;
       }
 
       #playhead {
@@ -143,6 +159,7 @@
         position: absolute;
         height: inherit;
         width: 1px;
+        pointer-events: none;
       }
       .timeline-event.keydown {
         background: black;
@@ -151,20 +168,53 @@
         background: blue;
       }
 
-      #event-log {
-        min-width: 10rem;
-        height: 10rem;
-        overflow-y: scroll;
-      }
-      #event-log > div {
-        border: 1px solid lightgray;
-        color: lightgray;
+      #event-log, #event-editor {
+        max-height: 10rem;
+        pointer-events: auto;
+        border: 1px solid black;
         padding: .5rem;
+        overflow-y: scroll;
         font-family: monospace;
       }
-      #event-log > div.recorded {
-        border-color: black;
+
+      #event-log {
+        min-width: 10rem;
+      }
+      #event-log::before {
+        content: "EVENT LOG";
+        margin-bottom: .5rem;
+      }
+      #event-log button {
         color: black;
+        text-align: left;
+      }
+      #event-log button.trimmed {
+        border-color: lightgray;
+        color: lightgray;
+      }
+
+      #event-editor {
+        width: 100%;
+        white-space: pre;
+      }
+      #event-editor::before {
+        content: "EVENT EDITOR";
+        margin-bottom: .5rem;
+      }
+      #event-editor:not(.open)::after {
+        content: "No event selected.";
+      }
+      #event-editor > div {
+        display: none;
+      }
+      #event-editor.open > div {
+        display: block;
+      }
+
+      input {
+        line-height: inherit;
+        font-family: inherit;
+        font-size: inherit;
       }
 
       .visualizer {
@@ -213,8 +263,16 @@
       .output {
         font-family: monospace;
         white-space: pre;
-      }
+        pointer-events: none;
 
+        -webkit-touch-callout: none; /* iOS Safari */
+          -webkit-user-select: none; /* Safari */
+           -khtml-user-select: none; /* Konqueror HTML */
+             -moz-user-select: none; /* Old versions of Firefox */
+              -ms-user-select: none; /* Internet Explorer/Edge */
+                  user-select: none; /* Non-prefixed version, currently
+                                        supported by Chrome, Edge, Opera and Firefox */
+      }
       .output .caret {
         display: inline;
         min-width: 1ch;
@@ -226,15 +284,40 @@
         content: "_";
       }
 
+      .output.recording {
+        color: red;
+      }
+      .output.recording .caret {
+        background: red;
+      }
+
       body.dragging, body.dragging * {
         cursor: grabbing;
+      }
+
+      body.resizing, body.resizing * {
+        cursor: ew-resize;
+      }
+
+      .noclick {
+        pointer-events: none;
+      }
+
+      .serif {
+        font-family: serif;
+      }
+
+      .gone {
+        display: none;
       }
     </style>
   </head>
   <body>
 
-    <h2 style="margin-bottom: -1.5rem; margin-left: 1.5rem; font-style: italic;">quewon's</h2>
-    <h1>live text recording studio</h1>
+    <header class="noclick noselect">
+      <h2 style="margin-bottom: -1.5rem; margin-left: 1.5rem; font-style: italic;">quewon's</h2>
+      <h1>live text recording studio</h1>
+    </header>
     <div class="flex" class="noselect">
       <button onclick="createTrack()" name="track"></button>
       <button onclick="currentTrack.toggleRecording(event)" name="record"></button>
@@ -245,14 +328,27 @@
       <button class="noselect" onclick="toggleSetting('startRecordOnInput', this)">start recording on keydown</button>
       <button class="noselect" onclick="toggleSetting('clearWithEnter', this)">clear with enter</button>
     </div>
-    <div id="timeline-info" class="noselect"></div>
+    <div id="timeline-info" class="noclick noselect"></div>
     <div id="timeline">
       <div id="timeline-ruler"></div>
       <div id="playhead"></div>
     </div>
-    <!-- <div id="event-log" class="flex column"></div> -->
-    <i style="color: lightgray">hit record to start capturing keyboard input.</i>
-    <br><br>
+    <div class="flex noclick">
+      <div id="event-log" class="flex column">No clip selected.</div>
+      <div id="event-editor" class="flex column">
+        <div>            TYPE: <button name="keydown" checked>keydown</button> <button name="keyup">keyup</button>
+
+            CODE: <span name="code">a</span>
+             KEY: <span name="key">a</span> <button name="listen" class="serif">listen</button> <span name="listening"><i>listening...</i></span>
+
+ LOCAL TIMESTAMP: <input type="number" name="local" value="0">
+GLOBAL TIMESTAMP: <input type="number" name="global" value="0">
+
+                  <button name="delete" class="serif">delete event</button></div>
+      </div>
+    </div>
+    <br>
+    <i class="noclick noselect" style="color: gray">hit record to start capturing keyboard input.</i><br><br>
 
   </body>
 

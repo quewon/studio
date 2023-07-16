@@ -98,7 +98,11 @@ class InputSimulator {
             break;
 
           default:
-            insert = e.key;
+            if (state.shiftKey) {
+              insert = e.key.toUpperCase();
+            } else {
+              insert = e.key;
+            }
             break;
         }
 

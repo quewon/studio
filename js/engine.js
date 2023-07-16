@@ -4,6 +4,19 @@ const ui = {
   timelineRuler: document.getElementById("timeline-ruler"),
   playhead: document.getElementById("playhead"),
   eventLog: document.getElementById("event-log"),
+  eventEditor: document.getElementById("event-editor"),
+
+  editor: {
+    keydown: document.querySelector("[name='keydown']"),
+    keyup: document.querySelector("[name='keyup']"),
+    code: document.querySelector("[name='code']"),
+    key: document.querySelector("[name='key']"),
+    listen: document.querySelector("[name='listen']"),
+    listening: document.querySelector("[name='listening']"),
+    local: document.querySelector("[name='local']"),
+    global: document.querySelector("[name='global']"),
+    delete: document.querySelector("[name='delete']")
+  }
 };
 
 var trackRatio = 1;
@@ -11,6 +24,9 @@ var totalTime = 0;
 var playheadTime = 0;
 var playing = false;
 var clipDragging;
+var clipSelected;
+var handleDragging;
+var listeningForEditor = false;
 
 var settings = {
   startRecordOnInput: false,
@@ -31,6 +47,16 @@ function handleEvent(e) {
 
 var keydownEvents = [];
 document.addEventListener("keydown", function(e) {
+  if (listeningForEditor) {
+    listeningForEditor = false;
+    ui.editor.listening.classList.add("gone");
+    eventBeingEdited.code = e.code;
+    eventBeingEdited.key = e.key;
+    eventBeingEdited.updateLogElement();
+    ui.editor.key.textContent = eventBeingEdited.key;
+    ui.editor.code.textContent = eventBeingEdited.code;
+  }
+
   if (currentTrack.recording) {
     e.preventDefault();
   }
@@ -66,18 +92,22 @@ document.addEventListener("keyup", function(e) {
     }
   }
 });
+document.addEventListener("mousedown", function(e) {
+  if (clipSelected && (e.target == document.body || e.target == document.documentElement)) {
+    clipSelected.deselect();
+  }
+});
 document.addEventListener("mousemove", function(e) {
   if (clipDragging) clipDragging.move(e.pageX);
   if (draggingPlayhead) {
     movePlayhead(e.pageX);
   }
-});
-document.addEventListener("mousedown", function(e) {
-
+  if (handleDragging) handleDragging.move(e.pageX);
 });
 document.addEventListener("mouseup", function(e) {
   if (clipDragging) clipDragging.drop();
   if (draggingPlayhead) dropPlayhead();
+  if (handleDragging) handleDragging.drop();
 });
 document.addEventListener("blur", function() {
   if (clipDragging) clipDragging.drop();
@@ -181,6 +211,7 @@ var timelineRulerRect = ui.timelineRuler.getBoundingClientRect();
 
 ui.timelineRuler.addEventListener("mousedown", function(e) {
   draggingPlayhead = true;
+  movePlayhead(e.pageX);
 });
 
 window.addEventListener("resize", function() {
@@ -203,6 +234,42 @@ function createTrack() {
   new Track();
 }
 
-function switchToTrack(index) {
-  currentTrack = allTracks[index];
-}
+// editor
+
+ui.editor.listen.onclick = function() {
+  listeningForEditor = true;
+  ui.editor.listening.classList.remove("gone");
+};
+
+ui.editor.keydown.onclick = function() {
+  ui.editor.keydown.setAttribute("checked", true);
+  ui.editor.keyup.removeAttribute("checked");
+  eventBeingEdited.type = "keydown";
+  eventBeingEdited.updateLogElement();
+};
+
+ui.editor.keyup.onclick = function() {
+  ui.editor.keyup.setAttribute("checked", true);
+  ui.editor.keydown.removeAttribute("checked");
+  eventBeingEdited.type = "keyup";
+  eventBeingEdited.updateLogElement();
+};
+
+ui.editor.local.onchange = function() {
+  const e = eventBeingEdited;
+  e.setLocalTimeStamp(ui.editor.local.value);
+  ui.editor.global.value = e.clip.startTime + e.localTimeStamp;
+};
+ui.editor.global.onchange = function() {
+  const e = eventBeingEdited;
+
+  const globalTime = e.localTimeStamp + e.clip.startTime;
+  const delta = ui.editor.global.value - globalTime;
+  e.setLocalTimeStamp(e.localTimeStamp + delta);
+  ui.editor.local.value = e.localTimeStamp;
+};
+
+ui.editor.delete.onclick = function() {
+  eventBeingEdited.remove();
+  stopEditingEvent(eventBeingEdited);
+};
