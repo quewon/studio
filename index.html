@@ -5,7 +5,7 @@
     <title>text studio</title>
     <style media="screen">
       :root {
-        --lightergray: rgba(0,0,0, .1);
+        --lightergray: rgb(230, 230, 230);
       }
 
       body {
@@ -61,13 +61,6 @@
         flex-grow: 1;
       }
 
-      #input {
-        border-color: lightgray;
-      }
-      body.recording #input {
-        border-color: black;
-      }
-
       .noselect {
         -webkit-touch-callout: none; /* iOS Safari */
           -webkit-user-select: none; /* Safari */
@@ -115,7 +108,7 @@
         height: 100%;
         border-left: 1px solid;
         border-right: 1px solid;
-        border-color: red;
+        border-color: black;
         translate: -50% 0;
         pointer-events: none;
         z-index: 10;
@@ -128,8 +121,15 @@
         height: .75rem;
         width: .75rem;
         translate: -50% 0;
-        background: red;
+        background: black;
         border-radius: 50%;
+      }
+
+      body.recording #playhead {
+        border-color: red;
+      }
+      body.recording #playhead::before {
+        background: red;
       }
 
       #timeline-ruler {
@@ -212,6 +212,7 @@
 
       .output {
         font-family: monospace;
+        white-space: pre;
       }
 
       .output .caret {
@@ -249,15 +250,14 @@
       <div id="timeline-ruler"></div>
       <div id="playhead"></div>
     </div>
-    <div class="flex">
-      <div id="input" class="grow" contenteditable placeholder="hit record to start capturing input within this text box."></div>
-      <div id="event-log" class="flex column"></div>
-    </div>
-    <br>
+    <!-- <div id="event-log" class="flex column"></div> -->
+    <i style="color: lightgray">hit record to start capturing keyboard input.</i>
+    <br><br>
 
   </body>
 
   <script type="text/javascript" src="js/toolbox.js"></script>
   <script type="text/javascript" src="js/recording.js"></script>
+  <script type="text/javascript" src="js/inputsim.js"></script>
   <script type="text/javascript" src="js/engine.js"></script>
 </html>

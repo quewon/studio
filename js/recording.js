@@ -2,14 +2,11 @@ class Track {
   constructor() {
     this.clips = [];
     this.orderedEventLog = [];
-
     this.recording = false;
-
     this.totalTime = 0;
+    this.simulator = new InputSimulator();
 
     this.domElement = createElement("div", { parent: ui.timeline, className: "track" });
-    this.outputElement = createElement("div", { parent: document.body, className: "output" });
-    this.caretElement = createElement("div", { parent: this.outputElement, className: "caret" });
 
     if (currentTrack) {
       if (currentTrack.recording) {
@@ -21,18 +18,19 @@ class Track {
     allTracks.push(this);
     currentTrack = this;
 
-    updateTimeline();
+    // updateTimeline();
   }
 
   handleEvent(e) {
     if (this.recording) {
-      this.currentClip.recordEvent(e);
+      const currentClip = this.clips[this.clips.length - 1];
+      currentClip.recordEvent(e);
     }
 
-    if (!playing && e.type != "mousemove") {
-      const div = createElement("div", { parent: ui.eventLog, textContent: e.type, className: this.recording ? "recorded" : null });
-      ui.eventLog.scrollTop = ui.eventLog.scrollHeight;
-    }
+    // if (!playing) {
+    //   const div = createElement("div", { parent: ui.eventLog, textContent: e.type, className: this.recording ? "recorded" : null });
+    //   ui.eventLog.scrollTop = ui.eventLog.scrollHeight;
+    // }
   }
 
   toggleRecording(e) {
@@ -51,27 +49,25 @@ class Track {
       stopPlaying();
     }
 
-    this.currentClip = new Clip(this, playheadTime);
+    this.clips.push(new Clip(this, playheadTime));
     this.recording = true;
     this.recordStartTime = startTime;
 
     document.body.classList.add("recording");
-    refocus();
   }
 
   stopRecording() {
-    this.currentClip.updateTimelineElement();
-    this.clips.push(this.currentClip);
-    this.currentClip = null;
+    const currentClip = this.clips[this.clips.length - 1];
+    currentClip.updateTimelineElement();
     this.recording = false;
 
     document.body.classList.remove("recording");
 
     this.orderEventLog();
-    this.updateTotalTime();
+    this.updateTotalTime(true);
   }
 
-  updateTotalTime() {
+  updateTotalTime(updatePlayhead) {
     this.setTotalTime(this.orderedEventLog.length > 0 ? this.orderedEventLog[this.orderedEventLog.length - 1].globalTime : 0);
   }
 
@@ -86,6 +82,12 @@ class Track {
     }
 
     setTotalTime(maxTrackLength);
+
+    if (playheadTime > maxTrackLength) {
+      setPlayheadTime(maxTrackLength);
+    } else {
+      setPlayheadTime(playheadTime);
+    }
   }
 
   update(delta) {
@@ -93,55 +95,8 @@ class Track {
       this.setTotalTime(Math.max(playheadTime + delta, this.totalTime));
       setPlayheadTime(playheadTime + delta);
 
-      this.printState(new RecordedEvent("fake", { localTimeStamp: 0 }));
+      this.orderEventLog();
     }
-  }
-
-  printState(e) {
-    if (!e) {
-      this.clearState();
-      return;
-    }
-
-    if (this.previousPrintedEvent != e) {
-      this.outputElement.innerHTML = e.inputFieldContent;
-
-      var start = e.selectionStart;
-      var end = e.selectionEnd;
-      if (start == end && end <= this.outputElement.textContent.length - 1) {
-        end++;
-      }
-
-      var range = document.createRange();
-      range.setStart(this.outputElement.firstChild || this.outputElement, start);
-      range.setEnd(this.outputElement.firstChild || this.outputElement, end);
-
-      while (this.caretElement.lastChild) {
-        this.caretElement.lastChild.remove();
-      }
-      this.caretElement.appendChild(range.extractContents());
-
-      range.insertNode(this.caretElement);
-
-      this.previousPrintedEvent = e;
-    }
-  }
-
-  clearState() {
-    this.outputElement.innerHTML = "";
-    this.previousPrintedEvent = null;
-  }
-
-  getEventsBetweenLocations(timeA, timeB) {
-    let events = [];
-
-    for (let e of this.orderedEventLog) {
-      if (e.globalTime > timeA && e.globalTime <= timeB) {
-        events.push(e.event);
-      }
-    }
-
-    return events;
   }
 
   orderEventLog() {
@@ -157,20 +112,6 @@ class Track {
     }
 
     this.orderedEventLog.sort((a, b) => a.globalTime - b.globalTime);
-  }
-
-  getStateAtLocation(time) {
-    var events = [];
-
-    for (let e of this.orderedEventLog) {
-      if (e.globalTime <= time) {
-        events.push(e.event);
-      }
-    }
-
-    if (events.length == 0) return null;
-
-    return events[events.length - 1];
   }
 }
 
@@ -267,57 +208,18 @@ class Clip {
   }
 }
 
-function getCurrentInputState() {
-  var output = {
-    innerHTML: ui.input.innerHTML,
-    selectionStart: 0,
-    selectionEnd: 0
-  };
-
-  var selection = document.getSelection();
-
-
-  if (selection.anchorNode && (selection.anchorNode == ui.input || selection.anchorNode.parentNode == ui.input)) {
-    output.selectionStart = selection.anchorOffset <= selection.focusOffset ? selection.anchorOffset : selection.focusOffset;
-    output.selectionEnd = selection.focusOffset >= selection.anchorOffset ? selection.focusOffset : selection.anchorOffset;
-  } else {
-    output.selectionStart = output.selectionEnd = ui.input.textContent.length;
-  }
-
-  return output;
-}
-
 class RecordedEvent {
   constructor(e, props) {
     this.type = e.type;
+    this.key = e.key;
     this.code = e.code;
 
     if ('localTimeStamp' in props) {
       this.localTimeStamp = props.localTimeStamp;
-
-      if (e.type == "keydown") {
-        this.inputFieldContent = null;
-        setTimeout(function() {
-          const state = getCurrentInputState();
-          this.inputFieldContent = state.innerHTML;
-          this.selectionStart = state.selectionStart;
-          this.selectionEnd = state.selectionEnd;
-
-          console.log(document.getSelection());
-        }.bind(this), 0);
-      } else {
-        const state = getCurrentInputState();
-        this.inputFieldContent = state.innerHTML;
-        this.selectionStart = state.selectionStart;
-        this.selectionEnd = state.selectionEnd;
-      }
     }
 
     if (props.isCopy) {
       this.localTimeStamp = e.localTimeStamp;
-      this.inputFieldContent = e.inputFieldContent;
-      this.selectionStart = e.selectionStart;
-      this.selectionEnd = e.selectionEnd;
     }
 
     if (props.parentNode) {
