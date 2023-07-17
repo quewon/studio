@@ -458,6 +458,8 @@ class Clip {
     document.body.classList.add("dragging");
     this.domElement.classList.add("dragging");
     clipDragging = this;
+
+    this.track.domElement.appendChild(this.domElement);
   }
 
   setStartTime(value) {
