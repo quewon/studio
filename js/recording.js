@@ -371,7 +371,7 @@ class Clip {
   updateLogElement() {
     const inputEvents = [];
     for (let e of this.log) {
-      inputEvents.push(new InputEvent(e, null, e.localTimeStamp));
+      inputEvents.push(new InputEvent(e.strippedEvent, null, e.localTimeStamp));
     }
 
     this.logElement.textContent = this.track.simulator.getStateAtTimeStamp(inputEvents, this.totalTime).textContent + " ("+this.log.length+")";
@@ -513,13 +513,15 @@ class Clip {
     const copy = new Clip(this.track);
 
     for (let e of this.log) {
-      new RecordedEvent(e, copy, e.localTimeStamp);
+      new RecordedEvent(e.strippedEvent, copy, e.localTimeStamp);
     }
 
     copy.setStartTime(playheadTime - this.trimStart);
     copy.totalTime = this.totalTime;
     copy.setTrimStart(this.trimStart);
     copy.setTrimmedTime(this.trimmedTime);
+
+    copy.logElement.textContent = this.logElement.textContent;
     copy.select();
 
     setPlayheadTime(copy.startTime + copy.trimStart + copy.trimmedTime);
