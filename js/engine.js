@@ -3,19 +3,30 @@ const ui = {
   timelineInfo: document.getElementById("timeline-info"),
   timelineRuler: document.getElementById("timeline-ruler"),
   playhead: document.getElementById("playhead"),
-  eventLog: document.getElementById("event-log"),
-  eventEditor: document.getElementById("event-editor"),
+  componentLog: document.getElementById("component-log"),
+  inspector: document.getElementById("inspector"),
 
-  editor: {
-    keydown: document.querySelector("[name='keydown']"),
-    keyup: document.querySelector("[name='keyup']"),
-    code: document.querySelector("[name='code']"),
-    key: document.querySelector("[name='key']"),
-    listen: document.querySelector("[name='listen']"),
-    listening: document.querySelector("[name='listening']"),
-    local: document.querySelector("[name='local']"),
-    global: document.querySelector("[name='global']"),
-    delete: document.querySelector("[name='delete']")
+  recordButton: document.querySelector("[name='record']"),
+
+  eventInspector: {
+    keydown: document.querySelector("#event-inspector [name='keydown']"),
+    keyup: document.querySelector("#event-inspector [name='keyup']"),
+    code: document.querySelector("#event-inspector [name='code']"),
+    key: document.querySelector("#event-inspector [name='key']"),
+    listen: document.querySelector("#event-inspector [name='listen']"),
+    listening: document.querySelector("#event-inspector [name='listening']"),
+    local: document.querySelector("#event-inspector [name='local']"),
+    global: document.querySelector("#event-inspector [name='global']"),
+    delete: document.querySelector("#event-inspector [name='delete']")
+  },
+
+  clipInspector: {
+    delete: document.querySelector("#clip-inspector [name='delete']")
+  },
+
+  trackInspector: {
+    lock: document.querySelector("#track-inspector [name='lock']"),
+    delete: document.querySelector("#track-inspector [name='delete']")
   }
 };
 
@@ -27,14 +38,17 @@ var clipDragging;
 var clipSelected;
 var handleDragging;
 var listeningForEditor = false;
+var focusedOnInput = false;
 
 var settings = {
   startRecordOnInput: false,
-  clearWithEnter: false
+  clearWithEnter: false,
+  assembleHangul: true
 };
 function toggleSetting(settingName, button) {
   button.toggleAttribute("checked");
   settings[settingName] = button.getAttribute("checked") != null;
+  updateOutput();
 }
 
 var currentTrack;
@@ -47,14 +61,30 @@ function handleEvent(e) {
 
 var keydownEvents = [];
 document.addEventListener("keydown", function(e) {
+  if (!currentTrack.recording && !listeningForEditor && !focusedOnInput && e.key == "Backspace") {
+    if (eventBeingEdited) {
+      if (confirm("are you sure you want to delete this event? (warning: this action is not reversible!)")) {
+        eventBeingEdited.remove();
+      }
+    } else if (clipSelected) {
+      if (confirm("are you sure you want to delete this clip? (warning: this action is not reversible!)")) {
+        clipSelected.remove();
+      }
+    } else if (allTracks.length > 1 && !currentTrack.locked) {
+      if (confirm("are you sure you want to delete this track? (warning: this action is not reversible!)")) {
+        currentTrack.remove();
+      }
+    }
+  }
+
   if (listeningForEditor) {
-    listeningForEditor = false;
-    ui.editor.listening.classList.add("gone");
+    stopListening();
     eventBeingEdited.code = e.code;
     eventBeingEdited.key = e.key;
     eventBeingEdited.updateLogElement();
-    ui.editor.key.textContent = eventBeingEdited.key;
-    ui.editor.code.textContent = eventBeingEdited.code;
+    ui.eventInspector.key.textContent = eventBeingEdited.key;
+    ui.eventInspector.code.textContent = eventBeingEdited.code;
+    updateOutput();
   }
 
   if (currentTrack.recording) {
@@ -69,10 +99,6 @@ document.addEventListener("keydown", function(e) {
     if (e.key == "Enter" && settings.clearWithEnter) {
       e.preventDefault();
     }
-  }
-
-  if (!currentTrack.recording && clipSelected && e.key == "Backspace") {
-    clipSelected.remove();
   }
 
   handleEvent(e);
@@ -142,13 +168,17 @@ function tick() {
   }
 }
 
+function updateOutput() {
+  for (let track of allTracks) {
+    track.simulator.printStateAtTimestamp(track.orderedEventLog, playheadTime);
+  }
+}
+
 function setPlayheadTime(value) {
   const prevValue = playheadTime;
   playheadTime = value;
 
-  for (let track of allTracks) {
-    track.simulator.printStateAtTimestamp(track.orderedEventLog, playheadTime);
-  }
+  updateOutput();
 
   ui.playhead.style.left = (playheadTime / trackRatio)+"%";
   ui.timelineInfo.textContent = "TRACK LENGTH: "+Math.ceil(totalTime)+" | PLAYHEAD: "+Math.ceil(playheadTime);
@@ -238,42 +268,125 @@ function createTrack() {
   new Track();
 }
 
-// editor
+// inspector
 
-ui.editor.listen.onclick = function() {
-  listeningForEditor = true;
-  ui.editor.listening.classList.remove("gone");
+function setInspectorMode(className) {
+  ui.inspector.classList.remove("track");
+  ui.inspector.classList.remove("clip");
+  ui.inspector.classList.remove("event");
+  ui.inspector.classList.add(className);
+}
+
+// event inspector
+
+var eventBeingEdited;
+function startEditingEvent(e) {
+  if (eventBeingEdited && eventBeingEdited != e) {
+    stopEditingEvent(eventBeingEdited);
+  }
+  eventBeingEdited = e;
+  setInspectorMode("event");
+
+  const inspector = ui.eventInspector;
+
+  inspector.keyup.removeAttribute("checked");
+  inspector.keydown.removeAttribute("checked");
+
+  if (e.type == "keydown") {
+    inspector.keydown.setAttribute("checked", true);
+  } else {
+    inspector.keyup.setAttribute("checked", true);
+  }
+
+  inspector.code.textContent = e.code;
+  inspector.key.textContent = e.key;
+  inspector.listening.classList.add("gone");
+
+  inspector.local.value = e.localTimeStamp;
+  inspector.global.value = e.clip.startTime + e.localTimeStamp;
+}
+
+function stopEditingEvent(e) {
+  stopListening();
+  e.logElement.removeAttribute("checked");
+  setInspectorMode("clip");
+  listeningForEditor = false;
+  eventBeingEdited = null;
+}
+
+function stopListening() {
+  listeningForEditor = false;
+  ui.inspector.classList.remove("listening");
+}
+
+ui.eventInspector.listen.onclick = function() {
+  if (listeningForEditor) {
+    stopListening();
+  } else {
+    listeningForEditor = true;
+    ui.inspector.classList.add("listening");
+  }
 };
 
-ui.editor.keydown.onclick = function() {
-  ui.editor.keydown.setAttribute("checked", true);
-  ui.editor.keyup.removeAttribute("checked");
+ui.eventInspector.keydown.onclick = function() {
+  ui.eventInspector.keydown.setAttribute("checked", true);
+  ui.eventInspector.keyup.removeAttribute("checked");
   eventBeingEdited.type = "keydown";
   eventBeingEdited.updateLogElement();
+  updateOutput();
 };
 
-ui.editor.keyup.onclick = function() {
-  ui.editor.keyup.setAttribute("checked", true);
-  ui.editor.keydown.removeAttribute("checked");
+ui.eventInspector.keyup.onclick = function() {
+  ui.eventInspector.keyup.setAttribute("checked", true);
+  ui.eventInspector.keydown.removeAttribute("checked");
   eventBeingEdited.type = "keyup";
   eventBeingEdited.updateLogElement();
+  updateOutput();
 };
 
-ui.editor.local.onchange = function() {
-  const e = eventBeingEdited;
-  e.setLocalTimeStamp(ui.editor.local.value);
-  ui.editor.global.value = e.clip.startTime + e.localTimeStamp;
+ui.eventInspector.local.onfocus = ui.eventInspector.global.onfocus = function() {
+  focusedOnInput = true;
 };
-ui.editor.global.onchange = function() {
+ui.eventInspector.local.onblur = ui.eventInspector.global.onblur = function() {
+  focusedOnInput = false;
+};
+ui.eventInspector.local.onchange = function() {
   const e = eventBeingEdited;
-
+  if (!e) return;
+  e.setLocalTimeStamp(ui.eventInspector.local.value);
+  ui.eventInspector.value = e.clip.startTime + e.localTimeStamp;
+};
+ui.eventInspector.global.onchange = function() {
+  const e = eventBeingEdited;
+  if (!e) return;
   const globalTime = e.localTimeStamp + e.clip.startTime;
-  const delta = ui.editor.global.value - globalTime;
+  const delta = ui.eventInspector.global.value - globalTime;
   e.setLocalTimeStamp(e.localTimeStamp + delta);
-  ui.editor.local.value = e.localTimeStamp;
+  ui.eventInspector.local.value = e.localTimeStamp;
 };
 
-ui.editor.delete.onclick = function() {
+ui.eventInspector.delete.onclick = function() {
   eventBeingEdited.remove();
-  stopEditingEvent(eventBeingEdited);
+};
+
+// clip inspector
+
+ui.clipInspector.delete.onclick = function() {
+  clipSelected.remove();
+};
+
+// track inspector
+
+ui.trackInspector.lock.onclick = function() {
+  this.toggleAttribute("checked");
+
+  if (this.getAttribute("checked") != null) {
+    currentTrack.lock();
+  } else {
+    currentTrack.unlock();
+  }
+};
+
+ui.trackInspector.delete.onclick = function() {
+  currentTrack.remove();
 };

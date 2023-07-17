@@ -117,6 +117,19 @@ class InputSimulator {
       }
     }
 
+    if (settings.assembleHangul) {
+      var oldText = Hangul.disassemble(copy.textContent);
+      var oldLength = copy.textContent.length;
+
+      copy.textContent = Hangul.assemble(oldText);
+
+      var difference = copy.textContent.length - oldLength;
+      if (difference != 0) {
+        copy.selectionStart += difference;
+        copy.selectionEnd += difference;
+      }
+    }
+
     return copy;
   }
 
@@ -184,5 +197,10 @@ class InputSimulator {
     } else {
       this.printState(this.getStateAtTimeStamp(events, events[events.length - 1].globalTimeStamp));
     }
+  }
+
+  remove() {
+    this.caretElement.remove();
+    this.domElement.remove();
   }
 }

@@ -28,11 +28,16 @@
         border-radius: 3px;
         background: white;
       }
-      button:active {
+      button:not(:disabled):active {
         background: var(--lightergray);
       }
       button[checked] {
         background: rgba(255, 0, 0, .1);
+      }
+      button:disabled {
+        border-color: var(--lightergray) !important;
+        color: var(--lightergray) !important;
+        cursor: auto;
       }
 
       .flex {
@@ -88,8 +93,15 @@
         background: orange;
       }
 
+      .track.locked .clip {
+        pointer-events: none;
+      }
+      .track.locked.selected .track-selector {
+        background: gray;
+      }
+
       /* clip */
-      .clip {
+      .track .clip {
         position: absolute;
         height: inherit;
         background: lightgray;
@@ -99,10 +111,10 @@
 
         cursor: grab;
       }
-      body:not(.resizing) .clip:hover {
+      body:not(.resizing) .track  .clip:hover {
         background: var(--lightergray);
       }
-      .clip.selected {
+      .track .clip.selected {
         background: orange !important;
       }
 
@@ -168,7 +180,7 @@
         background: white;
       }
 
-      #event-log, #event-editor {
+      #component-log, #inspector {
         max-height: 10rem;
         pointer-events: auto;
         border: 1px solid black;
@@ -177,38 +189,69 @@
         font-family: monospace;
       }
 
-      #event-log {
+      #component-log {
         width: 100%;
       }
-      #event-log::before {
-        content: "EVENT LOG";
+      #component-log div:first-child {
         margin-bottom: .5rem;
       }
-      #event-log button {
+      #component-log button {
         color: black;
         text-align: left;
       }
-      #event-log button.trimmed {
+      #component-log button.trimmed {
         border-color: lightgray;
         color: lightgray;
       }
 
-      #event-editor {
+      #inspector {
         width: 65rem;
+        height: fit-content;
+      }
+      #inspector > div {
+        display: none;
         white-space: pre;
       }
-      #event-editor::before {
-        content: "EVENT EDITOR";
+      #inspector.track #track-inspector {
+        display: block;
+      }
+      #inspector.clip #clip-inspector {
+        display: block;
+      }
+      #inspector.event #event-inspector {
+        display: block;
+      }
+      #inspector::before {
         margin-bottom: .5rem;
       }
-      #event-editor:not(.open)::after {
-        content: "No event selected.";
+      #inspector.track::before {
+        content: "TRACK INSPECTOR";
       }
-      #event-editor > div {
+      #inspector.clip::before {
+        content: "CLIP INSPECTOR";
+      }
+      #inspector.event::before {
+        content: "EVENT INSPECTOR";
+      }
+
+      #event-inspector [name='listen']::before {
+        content: "listen";
+      }
+      #inspector.listening #event-inspector [name='listen']::before {
+        content: "stop listening";
+      }
+      #event-inspector [name='listening'] {
         display: none;
       }
-      #event-editor.open > div {
-        display: block;
+      #inspector.listening #event-inspector [name='listening'] {
+        display: inline;
+      }
+
+      #track-inspector [name='lock']::after {
+        content: "lock track"
+      }
+      #track-inspector [name='lock'][checked]::after {
+        content: "unlock track"
       }
 
       input {
@@ -293,7 +336,7 @@
       }
 
       body.dragging, body.dragging * {
-        cursor: grabbing;
+        cursor: grabbing !important;
       }
 
       body.resizing, body.resizing * {
@@ -319,7 +362,7 @@
       <h2 style="margin-bottom: -1.5rem; margin-left: 1.5rem; font-style: italic;">quewon's</h2>
       <h1>live text recording studio</h1>
     </header>
-    <div class="flex" class="noselect">
+    <div id="timeline-controls" class="flex" class="noselect">
       <button onclick="createTrack()" name="track"></button>
       <button onclick="currentTrack.toggleRecording(event)" name="record"></button>
       <button onclick="setPlayheadTime(0)" name="tostart"></button>
@@ -335,12 +378,19 @@
       <div id="playhead"></div>
     </div>
     <div class="flex noclick">
-      <div id="event-log" class="flex column">No clip selected.</div>
-      <div id="event-editor" class="flex column">
-        <div>            TYPE: <button name="keydown" checked>keydown</button> <button name="keyup">keyup</button>
+      <div id="component-log" class="flex column">
+
+      </div>
+      <div id="inspector" class="flex column">
+        <div id="track-inspector"><button name="lock" class="serif"></button>
+<button disabled name="delete" class="serif">delete track</button></div>
+
+        <div id="clip-inspector"><button name="delete" class="serif">delete clip</button></div>
+
+        <div id="event-inspector">            TYPE: <button name="keydown" checked>keydown</button> <button name="keyup">keyup</button>
 
             CODE: <span name="code">a</span>
-             KEY: <span name="key">a</span> <button name="listen" class="serif">listen</button> <span name="listening"><i>listening...</i></span>
+             KEY: <span name="key">a</span> <button name="listen" class="serif"></button> <span name="listening"><i>listening...</i></span>
 
  LOCAL TIMESTAMP: <input type="number" name="local" value="0">
 GLOBAL TIMESTAMP: <input type="number" name="global" value="0">
@@ -353,6 +403,7 @@ GLOBAL TIMESTAMP: <input type="number" name="global" value="0">
 
   </body>
 
+  <script type="text/javascript" src="js/hangul.min.js"></script>
   <script type="text/javascript" src="js/toolbox.js"></script>
   <script type="text/javascript" src="js/recording.js"></script>
   <script type="text/javascript" src="js/inputsim.js"></script>

@@ -17,11 +17,37 @@ class Track {
       }
     }
 
+    this.selected = false;
+    this.locked = false;
+
+    this.index = allTracks.length;
+
     allTracks.push(this);
     this.select();
   }
 
+  lock() {
+    this.locked = true;
+    ui.trackInspector.lock.setAttribute("checked", true);
+    document.body.classList.add("locked");
+    this.domElement.classList.add("locked");
+    ui.recordButton.setAttribute("disabled", true);
+    ui.trackInspector.delete.setAttribute("disabled", true);
+    this.refreshLog();
+  }
+
+  unlock() {
+    this.locked = false;
+    ui.trackInspector.lock.removeAttribute("checked");
+    document.body.classList.remove("locked");
+    this.domElement.classList.remove("locked");
+    ui.recordButton.removeAttribute("disabled");
+    ui.trackInspector.delete.removeAttribute("disabled");
+    this.refreshLog();
+  }
+
   deselect() {
+    this.selected = false;
     currentTrack = null;
     this.domElement.classList.remove("selected");
     if (clipSelected && clipSelected.track == this) {
@@ -30,9 +56,47 @@ class Track {
   }
 
   select() {
+    if (clipSelected) {
+      clipSelected.deselect();
+    }
+
+    this.selected = true;
     if (currentTrack && currentTrack != this) currentTrack.deselect();
     currentTrack = this;
     this.domElement.classList.add("selected");
+    setInspectorMode("track");
+    this.refreshLog();
+
+    if (allTracks.length == 1) {
+      ui.trackInspector.delete.setAttribute("disabled", true);
+    } else {
+      ui.trackInspector.delete.removeAttribute("disabled");
+    }
+
+    if (this.locked) {
+      this.lock();
+    } else {
+      this.unlock();
+    }
+  }
+
+  refreshLog() {
+    if (!this.selected) return;
+
+    while (ui.componentLog.lastChild) {
+      ui.componentLog.lastChild.remove();
+    }
+
+    createElement("div", { parent: ui.componentLog, textContent: "CLIP LOG ("+this.clips.length+")" });
+
+    for (let c of this.clips) {
+      ui.componentLog.appendChild(c.logElement);
+      if (this.locked) {
+        c.logElement.setAttribute("disabled", true);
+      } else {
+        c.logElement.removeAttribute("disabled");
+      }
+    }
   }
 
   handleEvent(e) {
@@ -54,6 +118,8 @@ class Track {
   }
 
   startRecording() {
+    if (this.locked) return;
+
     if (playing) {
       stopPlaying();
     }
@@ -73,14 +139,16 @@ class Track {
     } else {
       currentClip.updateTimelineElement();
       this.orderEventLog();
+      this.updateTotalTime();
+      currentClip.updateLogElement();
     }
+
+    this.refreshLog();
 
     this.recording = false;
 
     document.body.classList.remove("recording");
     this.simulator.domElement.classList.remove("recording");
-
-    this.updateTotalTime();
   }
 
   updateTotalTime() {
@@ -139,6 +207,33 @@ class Track {
     }
 
     this.orderedEventLog.sort((a, b) => a.globalTime - b.globalTime);
+  }
+
+  remove() {
+    if (this.locked) return;
+
+    if (currentTrack == this) {
+      if (this.index + 1 < allTracks.length) {
+        allTracks[this.index + 1].select();
+      } else {
+        allTracks[this.index - 1].select();
+      }
+    }
+
+    this.domElement.remove();
+    this.selectorElement.remove();
+    this.simulator.remove();
+
+    allTracks.splice(this.index, 1);
+    for (let i=this.index; i<allTracks.length; i++) {
+      allTracks[i].index = i;
+    }
+
+    if (allTracks.length == 1) {
+      ui.trackInspector.delete.setAttribute("disabled", true);
+    } else {
+      ui.trackInspector.delete.removeAttribute("disabled");
+    }
   }
 }
 
@@ -222,7 +317,14 @@ class Clip {
 
     this.domElement = createElement("div", { parent: this.track.domElement, className: "clip" });
     this.domElement.addEventListener("mousedown", this.drag.bind(this));
+    this.domElement.onclick = function(e) {
+      e.stopPropagation();
+    };
     this.resizeHandles = new ClipResizeHandles(this);
+    this.logElement = createElement("button");
+    this.logElement.onclick = function() {
+      this.select();
+    }.bind(this);
 
     this.clickStart = false;
 
@@ -237,12 +339,38 @@ class Clip {
     this.width = 0;
   }
 
+  updateLogElement() {
+    const events = [];
+    for (let e of this.log) {
+      events.push({
+        globalTime: e.localTimeStamp,
+        event: e
+      });
+    }
+
+    this.logElement.textContent = this.track.simulator.getStateAtTimeStamp(events, this.totalTime).textContent + " ("+this.log.length+")";
+  }
+
+  reorderLog() {
+    this.updateLogElement();
+
+    this.log.sort((a, b) => a.localTimeStamp - b.localTimeStamp);
+
+    for (let i=0; i<this.log.length; i++) {
+      this.log[i].index = i;
+    }
+
+    this.refreshLog();
+  }
+
   refreshLog() {
     if (!this.selected) return;
 
-    while (ui.eventLog.lastChild) {
-      ui.eventLog.lastChild.remove();
+    while (ui.componentLog.lastChild) {
+      ui.componentLog.lastChild.remove();
     }
+
+    createElement("div", { parent: ui.componentLog, textContent: "EVENT LOG ("+this.log.length+")" });
 
     for (let e of this.log) {
       if (e.localTimeStamp < this.trimStart || e.localTimeStamp > this.trimStart + this.trimmedTime) {
@@ -250,16 +378,18 @@ class Clip {
       } else {
         e.logElement.classList.remove("trimmed");
       }
-      ui.eventLog.appendChild(e.logElement);
+      ui.componentLog.appendChild(e.logElement);
     }
   }
 
   deselect() {
+    this.track.refreshLog();
+
     clipSelected = null;
     this.domElement.classList.remove("selected");
     this.selected = false;
-    ui.eventLog.textContent = "No clip selected.";
     if (eventBeingEdited) stopEditingEvent(eventBeingEdited);
+    setInspectorMode("track");
   }
 
   select() {
@@ -270,6 +400,8 @@ class Clip {
     clipSelected = this;
     this.domElement.classList.add("selected");
     this.selected = true;
+
+    setInspectorMode("clip");
 
     this.refreshLog();
   }
@@ -290,11 +422,11 @@ class Clip {
 
   move(mousePosition) {
     // how long is 1px?
-    const pixel = totalTime / timelineRulerRect.width;
+    var pixel = totalTime / timelineRulerRect.width;
     // mouse distance traveled in pixels
-    const distance = mousePosition - this.dragInitials.mousePosition;
+    var distance = mousePosition - this.dragInitials.mousePosition;
 
-    const dx = Math.ceil(distance * pixel);
+    var dx = Math.ceil(distance * pixel);
 
     if (this.clickStart && Math.abs(distance) > 1) {
       this.clickStart = false;
@@ -304,7 +436,6 @@ class Clip {
 
     this.track.orderEventLog();
     this.track.updateTotalTime();
-
     this.updateTimelineElement();
   }
 
@@ -338,7 +469,7 @@ class Clip {
       e.domElement.style.left = ((e.localTimeStamp - this.trimStart) / clipRatio)+"%";
 
       if (eventBeingEdited == e) {
-        ui.editor.global.value = this.startTime + e.localTimeStamp
+        ui.eventInspector.global.value = this.startTime + e.localTimeStamp;
       }
     }
   }
@@ -370,6 +501,10 @@ class Clip {
     this.track.clips.splice(this.index, 1);
     this.domElement.remove();
     this.resizeHandles.remove();
+
+    this.track.orderEventLog();
+    this.track.updateTotalTime();
+    this.track.refreshLog();
   }
 }
 
@@ -414,50 +549,46 @@ class RecordedEvent {
     this.localTimeStamp = Math.max(value, 0);
 
     this.updateLogElement();
-    this.clip.updateLength();
+    this.clip.reorderLog();
     this.clip.updateTimelineElement();
+    this.clip.updateLength();
     this.clip.track.orderEventLog();
     this.clip.track.updateTotalTime();
+
+    updateOutput();
   }
 
   remove() {
+    var clipHasNextEvent = false;
     for (let i=this.index + 1; i<this.clip.log.length; i++) {
+      clipHasNextEvent = true;
       this.clip.log[i].index--;
     }
     this.clip.log.splice(this.index, 1);
 
     this.domElement.remove();
     this.logElement.remove();
+
+    if (eventBeingEdited == this) {
+      stopEditingEvent(eventBeingEdited);
+    }
+
+    if (this.clip.log.length > 0) {
+      var e;
+      if (clipHasNextEvent) {
+        e = this.clip.log[this.index];
+      } else {
+        e = this.clip.log[this.index - 1];
+      }
+      e.logElement.setAttribute("checked", true);
+      startEditingEvent(e);
+
+      this.clip.track.orderEventLog();
+      this.clip.refreshLog();
+      this.clip.updateLogElement();
+      updateOutput();
+    } else {
+      this.clip.remove();
+    }
   }
-}
-
-var eventBeingEdited;
-function startEditingEvent(e) {
-  if (eventBeingEdited) {
-    stopEditingEvent(eventBeingEdited);
-  }
-  eventBeingEdited = e;
-  ui.eventEditor.classList.add("open");
-
-  ui.editor.keyup.removeAttribute("checked");
-  ui.editor.keydown.removeAttribute("checked");
-
-  if (e.type == "keydown") {
-    ui.editor.keydown.setAttribute("checked", true);
-  } else {
-    ui.editor.keyup.setAttribute("checked", true);
-  }
-
-  ui.editor.code.textContent = e.code;
-  ui.editor.key.textContent = e.key;
-  ui.editor.listening.classList.add("gone");
-
-  ui.editor.local.value = e.localTimeStamp;
-  ui.editor.global.value = e.clip.startTime + e.localTimeStamp;
-}
-
-function stopEditingEvent(e) {
-  e.logElement.removeAttribute("checked");
-  ui.eventEditor.classList.remove("open");
-  listeningForEditor = false;
 }
