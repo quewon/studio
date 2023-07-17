@@ -191,6 +191,14 @@
         padding: .5rem;
         overflow-y: scroll;
         font-family: monospace;
+
+        -webkit-touch-callout: none; /* iOS Safari */
+          -webkit-user-select: none; /* Safari */
+           -khtml-user-select: none; /* Konqueror HTML */
+             -moz-user-select: none; /* Old versions of Firefox */
+              -ms-user-select: none; /* Internet Explorer/Edge */
+                  user-select: none; /* Non-prefixed version, currently
+                                        supported by Chrome, Edge, Opera and Firefox */
       }
 
       #component-log {
@@ -409,8 +417,10 @@ GLOBAL TIMESTAMP: <input type="number" name="global" value="0">
                   <button name="delete" class="serif">delete event</button></div>
       </div>
     </div>
-    <br>
-    <i class="noclick noselect" style="color: gray">hit record to start capturing keyboard input.</i><br><br>
+    <div class="noselect">
+      <br>
+      <i class="noclick noselect" style="color: gray">hit record to start capturing keyboard input.</i><br><br>
+    </div>
 
   </body>
 
