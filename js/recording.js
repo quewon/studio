@@ -9,6 +9,11 @@ class Track {
     this.domElement = createElement("div", { parent: ui.timeline, className: "track" });
     this.selectorElement = createElement("div", { parent: this.domElement, className: "track-selector" });
     this.domElement.onclick = this.select.bind(this);
+    this.domElement.onmouseenter = function(e) {
+      if (clipDragging && clipDragging.track != this) {
+        clipDragging.addToTrack(this);
+      }
+    }.bind(this);
 
     if (currentTrack) {
       if (currentTrack.recording) {
@@ -124,7 +129,7 @@ class Track {
       stopPlaying();
     }
 
-    this.clips.push(new Clip(this));
+    new Clip(this);
     this.recording = true;
 
     document.body.classList.add("recording");
@@ -136,14 +141,14 @@ class Track {
 
     if (currentClip.log.length == 0) {
       currentClip.remove();
+      this.refreshLog();
     } else {
       currentClip.updateTimelineElement();
       this.orderEventLog();
       this.updateTotalTime();
       currentClip.updateLogElement();
+      currentClip.select();
     }
-
-    this.refreshLog();
 
     this.recording = false;
 
@@ -246,8 +251,6 @@ class ClipResizeHandles {
 
     this.endHandle = createElement("div", { parent: clip.domElement, className: "resize-handle" });
     this.endHandle.addEventListener("mousedown", this.dragEndHandle.bind(this));
-
-    this.minClipWidth = 10;
   }
 
   drag(e) {
@@ -280,19 +283,13 @@ class ClipResizeHandles {
 
     switch (this.selectedHandle) {
       case this.startHandle:
-        this.clip.trimStart = clamp(this.dragInitials.trimStart + dx, 0, this.clip.totalTime - this.minClipWidth);
-        this.clip.trimmedTime = this.clip.totalTime - this.clip.trimStart;
+        this.clip.setTrimStart(this.dragInitials.trimStart + dx);
         break;
 
       case this.endHandle:
-        this.clip.trimmedTime = clamp(this.dragInitials.trimmedTime + dx, this.minClipWidth, this.clip.totalTime);
+        this.clip.setTrimmedTime(this.dragInitials.trimmedTime + dx);
         break;
     }
-
-    this.clip.track.orderEventLog();
-    this.clip.track.updateTotalTime();
-    this.clip.updateTimelineElement();
-    this.clip.refreshLog();
   }
 
   drop() {
@@ -309,13 +306,11 @@ class ClipResizeHandles {
 
 class Clip {
   constructor(track) {
-    this.track = track;
-    this.index = this.track.clips.length;
     this.log = [];
 
     // init dom elements
 
-    this.domElement = createElement("div", { parent: this.track.domElement, className: "clip" });
+    this.domElement = createElement("div", { className: "clip" });
     this.domElement.addEventListener("mousedown", this.drag.bind(this));
     this.domElement.onclick = function(e) {
       e.stopPropagation();
@@ -334,9 +329,46 @@ class Clip {
 
     this.trimStart = 0;
     this.trimmedTime = 0;
+    this.minClipWidth = 10;
 
     this.position = 0;
     this.width = 0;
+
+    this.addToTrack(track);
+  }
+
+  removeFromTrack() {
+    if (clipSelected == this) this.deselect();
+    for (let i=this.index + 1; i<this.track.clips.length; i++) {
+      this.track.clips[i].index--;
+    }
+    this.track.clips.splice(this.index, 1);
+
+    this.track.orderEventLog();
+    this.track.updateTotalTime();
+    this.track.refreshLog();
+
+    this.domElement.remove();
+    this.track = null;
+  }
+
+  addToTrack(track) {
+    if (track.locked) return;
+
+    if (this.track) {
+      const prevPlayhead = playheadTime;
+      this.removeFromTrack();
+      setPlayheadTime(prevPlayhead);
+    }
+
+    this.track = track;
+    this.index = track.clips.length;
+    track.clips.push(this);
+
+    this.track.domElement.appendChild(this.domElement);
+    track.orderEventLog();
+    track.updateTotalTime();
+    track.refreshLog();
   }
 
   updateLogElement() {
@@ -403,6 +435,8 @@ class Clip {
 
     setInspectorMode("clip");
 
+    updateClipInspector();
+
     this.refreshLog();
   }
 
@@ -416,8 +450,47 @@ class Clip {
     this.clickStart = true;
 
     document.body.classList.add("dragging");
+    this.domElement.classList.add("dragging");
 
     clipDragging = this;
+  }
+
+  setStartTime(value) {
+    this.startTime = value;
+    this.track.orderEventLog();
+    this.track.updateTotalTime();
+    this.updateTimelineElement();
+
+    if (this == clipSelected) {
+      updateClipInspector();
+    }
+  }
+
+  setTrimStart(value) {
+    this.trimStart = clamp(value, 0, this.totalTime - this.minClipWidth);
+    this.trimmedTime = this.totalTime - this.trimStart;
+
+    this.track.orderEventLog();
+    this.track.updateTotalTime();
+    this.updateTimelineElement();
+    this.refreshLog();
+
+    if (this == clipSelected) {
+      updateClipInspector();
+    }
+  }
+
+  setTrimmedTime(value) {
+    this.trimmedTime = clamp(value, this.minClipWidth, this.totalTime);
+
+    this.track.orderEventLog();
+    this.track.updateTotalTime();
+    this.updateTimelineElement();
+    this.refreshLog();
+
+    if (this == clipSelected) {
+      updateClipInspector();
+    }
   }
 
   move(mousePosition) {
@@ -432,17 +505,31 @@ class Clip {
       this.clickStart = false;
     }
 
-    this.startTime = this.dragInitials.startTime + dx;
-
-    this.track.orderEventLog();
-    this.track.updateTotalTime();
-    this.updateTimelineElement();
+    this.setStartTime(this.dragInitials.startTime + dx);
   }
 
   drop() {
     clipDragging = null;
     document.body.classList.remove("dragging");
+    this.domElement.classList.remove("dragging");
     if (this.clickStart) this.select();
+  }
+
+  duplicate() {
+    const copy = new Clip(this.track);
+
+    for (let e of this.log) {
+      const eventCopy = new RecordedEvent(e, { localTimeStamp: e.localTimeStamp, parentNode: copy.domElement, clip: copy, index: e.index });
+      copy.log.push(eventCopy);
+    }
+
+    copy.setStartTime(playheadTime - this.trimStart);
+    copy.totalTime = this.totalTime;
+    copy.setTrimStart(this.trimStart);
+    copy.setTrimmedTime(this.trimmedTime);
+    copy.select();
+
+    setPlayheadTime(copy.startTime + copy.trimStart + copy.trimmedTime);
   }
 
   updateTimelineElement() {
@@ -474,7 +561,7 @@ class Clip {
     }
   }
 
-  recordEvent(e) {
+  recordEvent(e, startTime) {
     if (this.log.length == 0) {
       this.startTime = playheadTime;
       this.recordStartTime = e.timeStamp;
@@ -494,17 +581,9 @@ class Clip {
   }
 
   remove() {
-    if (clipSelected == this) this.deselect();
-    for (let i=this.index + 1; i<this.track.clips.length; i++) {
-      this.track.clips[i].index--;
-    }
-    this.track.clips.splice(this.index, 1);
+    this.removeFromTrack();
     this.domElement.remove();
     this.resizeHandles.remove();
-
-    this.track.orderEventLog();
-    this.track.updateTotalTime();
-    this.track.refreshLog();
   }
 }
 
@@ -516,10 +595,6 @@ class RecordedEvent {
 
     if ('localTimeStamp' in props) {
       this.localTimeStamp = props.localTimeStamp;
-    }
-
-    if (props.isCopy) {
-      this.localTimeStamp = e.localTimeStamp;
     }
 
     if (props.parentNode) {

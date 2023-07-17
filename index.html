@@ -96,7 +96,7 @@
       .track.locked .clip {
         pointer-events: none;
       }
-      .track.locked.selected .track-selector {
+      .track.locked .track-selector {
         background: gray;
       }
 
@@ -116,6 +116,10 @@
       }
       .track .clip.selected {
         background: orange !important;
+      }
+
+      body.dragging .clip:not(.dragging) {
+        pointer-events: none;
       }
 
       .resize-handle {
@@ -385,7 +389,14 @@
         <div id="track-inspector"><button name="lock" class="serif"></button>
 <button disabled name="delete" class="serif">delete track</button></div>
 
-        <div id="clip-inspector"><button name="delete" class="serif">delete clip</button></div>
+        <div id="clip-inspector">  TIMESTAMP: <input type="number" name="timestamp" value="0">
+     LENGTH: <span name="length"></span>
+
+ TRIM START: <input type="number" name="trim-start" value="0">
+TRIM LENGTH: <input type="number" name="trim-length" value="0">
+
+             <button name="duplicate" class="serif">duplicate clip at playhead</button>
+             <button name="delete" class="serif">delete clip</button></div>
 
         <div id="event-inspector">            TYPE: <button name="keydown" checked>keydown</button> <button name="keyup">keyup</button>
 

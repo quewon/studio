@@ -21,6 +21,11 @@ const ui = {
   },
 
   clipInspector: {
+    timestamp: document.querySelector("#clip-inspector [name='timestamp']"),
+    length: document.querySelector("#clip-inspector [name='length']"),
+    trimStart: document.querySelector("#clip-inspector [name='trim-start']"),
+    trimLength: document.querySelector("#clip-inspector [name='trim-length']"),
+    duplicate: document.querySelector("#clip-inspector [name='duplicate']"),
     delete: document.querySelector("#clip-inspector [name='delete']")
   },
 
@@ -344,12 +349,24 @@ ui.eventInspector.keyup.onclick = function() {
   updateOutput();
 };
 
-ui.eventInspector.local.onfocus = ui.eventInspector.global.onfocus = function() {
+ui.eventInspector.local.onfocus =
+ui.eventInspector.global.onfocus =
+ui.clipInspector.timestamp.onfocus =
+ui.clipInspector.trimStart.onfocus =
+ui.clipInspector.trimLength.onfocus =
+function() {
   focusedOnInput = true;
 };
-ui.eventInspector.local.onblur = ui.eventInspector.global.onblur = function() {
+
+ui.eventInspector.local.onblur =
+ui.eventInspector.global.onblur =
+ui.clipInspector.timestamp.onblur =
+ui.clipInspector.trimStart.onblur =
+ui.clipInspector.trimLength.onblur =
+function() {
   focusedOnInput = false;
 };
+
 ui.eventInspector.local.onchange = function() {
   const e = eventBeingEdited;
   if (!e) return;
@@ -370,6 +387,37 @@ ui.eventInspector.delete.onclick = function() {
 };
 
 // clip inspector
+
+function updateClipInspector() {
+  const c = clipSelected;
+
+  ui.clipInspector.timestamp.value = c.startTime;
+  ui.clipInspector.length.textContent = c.totalTime;
+  ui.clipInspector.trimStart.value = c.trimStart;
+  ui.clipInspector.trimLength.value = c.trimmedTime;
+}
+
+ui.clipInspector.timestamp.onchange = function() {
+  const c = clipSelected;
+  if (!c) return;
+  c.setStartTime(Number(this.value));
+};
+
+ui.clipInspector.trimStart.onchange = function() {
+  const c = clipSelected;
+  if (!c) return;
+  c.setTrimStart(Number(this.value));
+};
+
+ui.clipInspector.trimLength.onchange = function() {
+  const c = clipSelected;
+  if (!c) return;
+  c.setTrimmedTime(Number(this.value));
+};
+
+ui.clipInspector.duplicate.onclick = function() {
+  clipSelected.duplicate();
+};
 
 ui.clipInspector.delete.onclick = function() {
   clipSelected.remove();
