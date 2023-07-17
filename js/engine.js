@@ -23,6 +23,7 @@ const ui = {
   },
 
   clipInspector: {
+    join: document.querySelector("#clip-inspector [name='join']"),
     timestamp: document.querySelector("#clip-inspector [name='timestamp']"),
     length: document.querySelector("#clip-inspector [name='length']"),
     trimStart: document.querySelector("#clip-inspector [name='trim-start']"),
@@ -32,6 +33,7 @@ const ui = {
   },
 
   trackInspector: {
+    playhead: document.querySelector("#track-inspector [name='playhead']"),
     lock: document.querySelector("#track-inspector [name='lock']"),
     delete: document.querySelector("#track-inspector [name='delete']")
   }
@@ -182,6 +184,13 @@ function setPlayheadTime(value) {
 
   updateOutput();
 
+  if (totalTime == 0) {
+    ui.trackInspector.playhead.value = 0;
+    playheadTime = 0;
+  } else {
+    ui.trackInspector.playhead.value = playheadTime;
+  }
+
   ui.playhead.style.left = (playheadTime / trackRatio)+"%";
   ui.timelineInfo.textContent = "TRACK LENGTH: "+Math.ceil(totalTime)+" | PLAYHEAD: "+Math.ceil(playheadTime);
 }
@@ -310,6 +319,7 @@ ui.eventInspector.global.onfocus =
 ui.clipInspector.timestamp.onfocus =
 ui.clipInspector.trimStart.onfocus =
 ui.clipInspector.trimLength.onfocus =
+ui.trackInspector.playhead.onfocus =
 function() {
   focusedOnInput = true;
 };
@@ -319,6 +329,7 @@ ui.eventInspector.global.onblur =
 ui.clipInspector.timestamp.onblur =
 ui.clipInspector.trimStart.onblur =
 ui.clipInspector.trimLength.onblur =
+ui.trackInspector.playhead.onblur =
 function() {
   focusedOnInput = false;
 };
@@ -375,7 +386,32 @@ ui.clipInspector.delete.onclick = function() {
   clipSelected.remove();
 };
 
+var joiningClips = false;
+function prepareJoin(button) {
+  button.toggleAttribute("checked");
+  if (button.getAttribute("checked") != null) {
+    startJoinMode();
+  } else {
+    stopJoinMode();
+  }
+}
+
+function startJoinMode() {
+  joiningClips = true;
+  document.body.classList.add("joining");
+}
+
+function stopJoinMode() {
+  joiningClips = false;
+  document.body.classList.remove("joining");
+  ui.clipInspector.join.removeAttribute("checked");
+}
+
 // track inspector
+
+ui.trackInspector.playhead.onchange = function() {
+  setPlayheadTime(clamp(this.value, 0, totalTime));
+};
 
 ui.trackInspector.lock.onclick = function() {
   this.toggleAttribute("checked");
@@ -394,8 +430,9 @@ ui.trackInspector.delete.onclick = function() {
 // settings
 
 var settings = {
+  minClipWidth: 10,
   startRecordOnInput: false,
-  clearWithEnter: false,
+  clearWithEnter: true,
   assembleHangul: true,
   useBakedStates: true,
   printConversation: true
@@ -409,12 +446,6 @@ function toggleSetting(settingName, button) {
 function toggleGlobalSettings(button) {
   button.toggleAttribute("checked");
   ui.globalSettings.classList.toggle("gone");
-
-  if (button.getAttribute("checked") != null) {
-
-  } else {
-
-  }
 }
 
 // safari drag cursor fix ??

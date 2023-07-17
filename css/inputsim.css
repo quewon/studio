@@ -25,21 +25,28 @@
 }
 
 .conversation {
-
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+.conversation:has(.dialogue) {
+  border: 1px solid gray;
+  border-radius: 5px;
+  padding: .5rem;
+  margin-bottom: .5rem;
 }
 
 .dialogue {
   /* background: gray; */
   /* padding: .25rem; */
   border-radius: 5px;
-  margin-bottom: .25rem;
   /* color: white; */
   max-width: 45%;
   word-break: break-word;
 }
 .dialogue.c0 {
   text-align: right;
-  margin-left: auto;
+  align-self: flex-end;
 }
 .dialogue.c1 {
 

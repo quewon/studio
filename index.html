@@ -121,8 +121,12 @@
         background: orange !important;
       }
 
-      body.dragging .clip:not(.dragging) {
+      body.dragging .track .clip:not(.dragging) {
         pointer-events: none;
+      }
+      body.joining .track .clip:not(.selected) {
+        background: red;
+        cursor: pointer;
       }
 
       .resize-handle {
@@ -239,15 +243,6 @@
       #inspector::before {
         margin-bottom: .5rem;
       }
-      #inspector.track::before {
-        content: "TRACK INSPECTOR";
-      }
-      #inspector.clip::before {
-        content: "CLIP INSPECTOR";
-      }
-      #inspector.event::before {
-        content: "EVENT INSPECTOR";
-      }
 
       #event-inspector [name='listen']::before {
         content: "listen";
@@ -362,9 +357,9 @@
     <div id="timeline-controls" class="flex" class="noselect">
       <button onclick="createTrack()" name="track"></button>
       <button onclick="currentTrack.toggleRecording(event)" name="record"></button>
-      <button onclick="setPlayheadTime(0)" name="tostart"></button>
+      <button onclick="setPlayheadTime(0)" name="tostart" title="move playhead to the start of the track"></button>
       <button onclick="togglePlaying()" name="play"></button>
-      <button onclick="setPlayheadTime(totalTime)" name="toend"></button>
+      <button onclick="setPlayheadTime(totalTime)" name="toend" title="move playhead to the end of the track"></button>
       <div class="grow"></div>
       <button onclick="toggleGlobalSettings(this)">settings</button>
     </div>
@@ -376,7 +371,7 @@
     <div class="flex column noclick">
       <div id="global-settings" class="gone">
         <button onclick="toggleSetting('startRecordOnInput', this)">start recording on keydown</button>
-        <button onclick="toggleSetting('clearWithEnter', this)">clear with enter</button>
+        <button checked onclick="toggleSetting('clearWithEnter', this)">clear with enter</button>
         <button checked onclick="toggleSetting('assembleHangul', this)">한글 인풋 지원 | hangul input support</button>
         <br><br>
         thanks to <a href="https://github.com/e-/Hangul.js" target="_blank">Hangul.js</a>, developed by Jaemin Jo!!
@@ -386,19 +381,34 @@
 
         </div>
         <div id="inspector" class="flex column">
-        <div id="track-inspector"><button name="lock" class="serif"></button>
-<button disabled name="delete" class="serif">delete track</button></div>
+        <div id="track-inspector">TRACK INSPECTOR
 
-        <div id="clip-inspector">  TIMESTAMP: <input type="number" name="timestamp" value="0">
+<button name="lock" class="serif"></button>
+
+PLAYHEAD: <input type="number" name="playhead" value="0">
+(numbers here are more accurate.)
+
+          <button disabled name="delete" class="serif">delete track</button></div>
+
+        <div id="clip-inspector">CLIP INSPECTOR
+
+<button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart)" title="move playhead to start of clip">|←</button> <button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart + clipSelected.trimmedTime)" title="move playhead to end of clip">→|</button> <button class="serif" onclick="clipSelected.split(playheadTime)" title="split clip at playhead">split</button> <button name="duplicate" class="serif" title="duplicate clip at playhead">duplicate</button> <button class="serif" onclick="clipSelected.setStartTime(playheadTime - clipSelected.trimStart)">move to playhead</button>
+
+<button class="serif" onclick="prepareJoin(this)" title="start merging clips together" name="join">merge mode</button>
+
+  TIMESTAMP: <input type="number" name="timestamp" value="0">
      LENGTH: <span name="length"></span>
 
  TRIM START: <input type="number" name="trim-start" value="0">
 TRIM LENGTH: <input type="number" name="trim-length" value="0">
 
-             <button name="duplicate" class="serif">duplicate clip at playhead</button>
              <button name="delete" class="serif">delete clip</button></div>
 
-        <div id="event-inspector">            TYPE: <button name="keydown" checked>keydown</button> <button name="keyup">keyup</button>
+        <div id="event-inspector">EVENT INSPECTOR
+
+<button class="serif" onclick="setPlayheadTime(eventBeingEdited.clip.startTime + eventBeingEdited.localTimeStamp)" title="move playhead to event location">↓</button> <button class="serif" onclick="clipSelected.split(eventBeingEdited.clip.startTime + eventBeingEdited.localTimeStamp)" title="events on the boundary end up on the left clip">split clip here</button>
+
+            TYPE: <button name="keydown" checked>keydown</button> <button name="keyup">keyup</button>
 
             CODE: <span name="code">a</span>
              KEY: <span name="key">a</span> <button name="listen" class="serif"></button> <span name="listening"><i>listening...</i></span>

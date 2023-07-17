@@ -125,6 +125,8 @@ class Track {
   startRecording() {
     if (this.locked) return;
 
+    if (joiningClips) stopJoinMode();
+
     if (playing) {
       stopPlaying();
     }
@@ -236,6 +238,8 @@ class Track {
     } else {
       ui.trackInspector.delete.removeAttribute("disabled");
     }
+
+    updateOutput();
   }
 }
 
@@ -311,7 +315,8 @@ class Clip {
     this.domElement.addEventListener("mousedown", this.drag.bind(this));
     this.domElement.onclick = function(e) {
       e.stopPropagation();
-    };
+      if (joiningClips && clipSelected != this) clipSelected.join(this);
+    }.bind(this);
     this.resizeHandles = new ClipResizeHandles(this);
     this.logElement = createElement("button", { textContent: "clip in progress..." });
     this.logElement.onclick = function() {
@@ -326,7 +331,6 @@ class Clip {
 
     this.trimStart = 0;
     this.trimmedTime = 0;
-    this.minClipWidth = 10;
 
     this.position = 0;
     this.width = 0;
@@ -416,9 +420,13 @@ class Clip {
     this.selected = false;
     if (eventBeingEdited) eventBeingEdited.deselect();
     setInspectorMode("track");
+
+    if (joiningClips) stopJoinMode();
   }
 
   select() {
+    if (joiningClips) return;
+
     if (clipSelected) {
       clipSelected.deselect();
     }
@@ -437,15 +445,16 @@ class Clip {
   drag(e) {
     e.stopPropagation();
 
+    if (joiningClips && clipSelected != this) return;
+
+    this.clickStart = true;
     this.dragInitials = {
       startTime: this.startTime,
       mousePosition: e.pageX
     };
-    this.clickStart = true;
 
     document.body.classList.add("dragging");
     this.domElement.classList.add("dragging");
-
     clipDragging = this;
   }
 
@@ -461,7 +470,7 @@ class Clip {
   }
 
   setTrimStart(value) {
-    this.trimStart = clamp(value, 0, this.totalTime - this.minClipWidth);
+    this.trimStart = clamp(value, 0, this.totalTime - settings.minClipWidth);
     this.trimmedTime = this.totalTime - this.trimStart;
 
     this.track.orderInputEvents();
@@ -475,7 +484,7 @@ class Clip {
   }
 
   setTrimmedTime(value) {
-    this.trimmedTime = clamp(value, this.minClipWidth, this.totalTime);
+    this.trimmedTime = clamp(value, settings.minClipWidth, this.totalTime);
 
     this.track.orderInputEvents();
     this.track.updateTotalTime();
@@ -497,6 +506,9 @@ class Clip {
 
     if (this.clickStart && Math.abs(distance) > 1) {
       this.clickStart = false;
+      if (joiningClips && clipSelected == this) {
+        stopJoinMode();
+      }
     }
 
     this.setStartTime(this.dragInitials.startTime + dx);
@@ -510,7 +522,7 @@ class Clip {
   }
 
   duplicate() {
-    const copy = new Clip(this.track);
+    const copy = new Clip(currentTrack);
 
     for (let e of this.log) {
       new RecordedEvent(e.strippedEvent, copy, e.localTimeStamp);
@@ -525,6 +537,97 @@ class Clip {
     copy.select();
 
     setPlayheadTime(copy.startTime + copy.trimStart + copy.trimmedTime);
+
+    return copy;
+  }
+
+  split(timeStamp) {
+    if (timeStamp < this.startTime + this.trimStart || timeStamp >= this.startTime + this.trimStart + this.trimmedTime) {
+      return;
+    }
+
+    var copy = this.duplicate();
+
+    copy.addToTrack(this.track);
+
+    const relativeTimeStamp = timeStamp - this.startTime + .1;
+    const trimmedTime = this.startTime + this.trimStart + this.trimmedTime - timeStamp;
+
+    this.setTrimmedTime(timeStamp - this.trimStart - this.startTime);
+
+    copy.setStartTime(this.startTime);
+    copy.setTrimStart(relativeTimeStamp);
+    copy.setTrimmedTime(trimmedTime);
+
+    copy.select();
+
+    setPlayheadTime(timeStamp);
+  }
+
+  trim() {
+    const start = this.startTime;
+
+    for (let i=this.log.length-1; i>=0; i--) {
+      const e = this.log[i];
+      if (e.localTimeStamp < this.trimStart || e.localTimeStamp > this.trimStart + this.trimmedTime) {
+        e.remove();
+      }
+    }
+
+    this.totalTime = this.trimmedTime;
+    this.setStartTime(this.startTime + this.trimStart);
+    this.setTrimStart(0);
+    this.setTrimmedTime(this.totalTime);
+
+    for (let e of this.log) {
+      const globalTimeStamp = e.localTimeStamp + start;
+      e.localTimeStamp = globalTimeStamp - this.startTime;
+    }
+  }
+
+  join(clip) {
+    this.trim();
+    clip.trim();
+
+    // global points
+    const startA = this.startTime;
+    const startB = clip.startTime;
+    const endA = startA + this.totalTime;
+    const endB = startB + clip.totalTime;
+    const tsA = startA + this.trimStart;
+    const tsB = startB + clip.trimStart;
+    const teA = tsA + this.trimmedTime;
+    const teB = tsB + clip.trimmedTime;
+
+    const start = Math.min(startA, startB);
+    const totalTime = Math.max(endA, endB) - start;
+    const trimStart = Math.min(tsA, tsB) - start;
+    const trimmedTime = Math.max(teA, teB) - start - trimStart;
+
+    this.startTime = start;
+    this.totalTime = totalTime;
+    this.trimStart = trimStart;
+    this.setTrimmedTime(trimmedTime);
+
+    for (let e of this.log) {
+      var globalTimeStamp = e.localTimeStamp + startA;
+      e.localTimeStamp = globalTimeStamp - start;
+    }
+
+    for (let e of clip.log) {
+      e.addToClip(this);
+
+      var globalTimeStamp = e.localTimeStamp + clip.startTime;
+      e.localTimeStamp = globalTimeStamp - start;
+    }
+
+    // this.track.updateTotalTime();
+
+    this.reorderLog();
+    this.updateTimelineElement();
+    this.updateLength();
+
+    clip.remove();
   }
 
   updateTimelineElement() {
@@ -582,7 +685,7 @@ class RecordedEvent {
     this.strippedEvent = new StrippedEvent(e);
     this.localTimeStamp = localTimeStamp;
 
-    this.domElement = createElement("div", { parent: clip.domElement, className: e.type+" timeline-event" });
+    this.domElement = createElement("div", { className: e.type+" timeline-event" });
 
     this.logElement = createElement("button");
     this.logElement.onclick = function(e) {
@@ -595,9 +698,17 @@ class RecordedEvent {
     }.bind(this);
     this.updateLogElement();
 
+    this.addToClip(clip);
+  }
+
+  addToClip(clip) {
+    // should get removed from previous clip if it has been assigned one, but i don't need that to happen yet
+
     this.clip = clip;
-    this.index = this.clip.log.length;
-    this.clip.log.push(this);
+    this.index = clip.log.length;
+    clip.log.push(this);
+
+    clip.domElement.appendChild(this.domElement);
   }
 
   updateLogElement() {
@@ -657,6 +768,8 @@ class RecordedEvent {
   }
 
   select() {
+    if (joiningClips) stopJoinMode();
+
     if (eventBeingEdited && eventBeingEdited != this) {
       eventBeingEdited.deselect();
     }
