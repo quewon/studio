@@ -1,22 +1,56 @@
-class InputSimulator {
+class StrippedEvent {
+  constructor(e) {
+    e = e || {};
+
+    this.type = e.type;
+    this.key = e.key;
+    this.code = e.code;
+  }
+}
+
+class SimulationState {
+  constructor(state) {
+    state = state || {};
+
+    this.textContent = state.textContent || "";
+    this.selectionStart = state.selectionStart || 0;
+    this.selectionEnd = state.selectionEnd || 0;
+    this.selectionDirection = state.selectionDirection || 0;
+    this.shiftKey = state.shiftKey || 0;
+
+    this.clearedText = [];
+    if (state.clearedText) {
+      for (let text of state.clearedText) {
+        this.clearedText.push(text);
+      }
+    }
+  }
+}
+
+class InputEvent {
+  constructor(e, state, globalTime) {
+    this.strippedEvent = new StrippedEvent(e);
+    this.bakedState = state || null;
+    this.globalTime = globalTime || 0;
+  }
+}
+
+class Simulator {
   constructor() {
     this.domElement = createElement("div", { parent: document.body, className: "output" });
     this.caretElement = createElement("div", { parent: this.domElement, className: "caret" });
-    this.selectionStart = this.selectionEnd = 0;
+    this.lastPrintedState = null;
   }
 
-  simulateEvent(state, e) {
+  simulateEvent(state, inputEvent) {
+    const e = inputEvent.strippedEvent;
+    const timeStamp = inputEvent.globalTime;
+
+    var copy = new SimulationState(state);
+
     const text = state.textContent;
     const start = state.selectionStart;
     const end = state.selectionEnd;
-
-    var copy = {
-      textContent: state.textContent,
-      selectionStart: state.selectionStart,
-      selectionEnd: state.selectionEnd,
-      shiftKey: state.shiftKey,
-      selectionDirection: state.selectionDirection
-    };
 
     if (e.type == "keydown") {
       if (e.key == "Backspace") {
@@ -33,6 +67,8 @@ class InputSimulator {
         switch (e.key) {
           case "Enter":
             if (settings.clearWithEnter) {
+              copy.clearedText.push(copy.textContent);
+              copy.clearedText.push(timeStamp);
               copy.textContent = "";
               copy.selectionStart = copy.selectionEnd = 0;
             } else {
@@ -133,20 +169,14 @@ class InputSimulator {
     return copy;
   }
 
-  getStateAtTimeStamp(events, timeStamp) {
-    var state = {
-      textContent: "",
-      selectionStart: 0,
-      selectionEnd: 0,
-      shiftKey: false,
-      selectionDirection: 0
-    }
+  getStateAtTimeStamp(inputEvents, timeStamp) {
+    var state = new SimulationState();
 
-    for (let e of events) {
+    for (let e of inputEvents) {
       if (e.globalTime > timeStamp) {
         return state;
       }
-      state = this.simulateEvent(state, e.event);
+      state = settings.useBakedState && e.bakedState ? e.bakedState : this.simulateEvent(state, e);
     }
 
     return state;
@@ -157,10 +187,11 @@ class InputSimulator {
     while (this.caretElement.lastChild) {
       this.caretElement.lastChild.remove();
     }
-    // this.domElement.appendChild(this.caretElement);
   }
 
   printState(state) {
+    this.lastPrintedState = state;
+
     if (!state) {
       this.clearState();
       return;
@@ -187,20 +218,64 @@ class InputSimulator {
     range.insertNode(this.caretElement);
   }
 
-  printStateAtTimestamp(events, timeStamp) {
-    this.printState(this.getStateAtTimeStamp(events, timeStamp));
+  printStateAtTimestamp(inputEvents, timeStamp) {
+    this.printState(this.getStateAtTimeStamp(inputEvents, timeStamp));
   }
 
-  printFinalState(events) {
+  printFinalState(inputEvents) {
     if (!events || events.length == 0) {
       this.clearState();
     } else {
-      this.printState(this.getStateAtTimeStamp(events, events[events.length - 1].globalTimeStamp));
+      this.printState(this.getStateAtTimeStamp(inputEvents, events[events.length - 1].globalTimeStamp));
     }
   }
 
   remove() {
     this.caretElement.remove();
     this.domElement.remove();
+  }
+}
+
+function createClearedTextLog(clearedText) {
+  var log = clearedText.split("\r\n");
+  return log;
+}
+
+class Conversation {
+  constructor() {
+    this.domElement = createElement("div", { parent: document.body, className: "conversation" });
+  }
+
+  clear() {
+    while (this.domElement.lastElementChild) {
+      this.domElement.lastElementChild.remove();
+    }
+  }
+
+  print(states) {
+    this.clear();
+
+    var texts = [];
+
+    for (let i=0; i<states.length; i++) {
+      const state = states[i];
+
+      if (!state) continue;
+
+      const className = "dialogue c"+i;
+      for (let t=0; t<state.clearedText.length; t+=2) {
+        texts.push({
+          textContent: state.clearedText[t],
+          className: className,
+          timeStamp: state.clearedText[t+1]
+        })
+      }
+    }
+
+    texts.sort((a, b) => a.timeStamp - b.timeStamp);
+
+    for (let text of texts) {
+      createElement("div", { parent: this.domElement, className: text.className, textContent: text.textContent });
+    }
   }
 }

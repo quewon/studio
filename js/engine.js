@@ -1,4 +1,6 @@
 const ui = {
+  globalSettings: document.getElementById("global-settings"),
+
   timeline: document.getElementById("timeline"),
   timelineInfo: document.getElementById("timeline-info"),
   timelineRuler: document.getElementById("timeline-ruler"),
@@ -45,19 +47,10 @@ var handleDragging;
 var listeningForEditor = false;
 var focusedOnInput = false;
 
-var settings = {
-  startRecordOnInput: false,
-  clearWithEnter: false,
-  assembleHangul: true
-};
-function toggleSetting(settingName, button) {
-  button.toggleAttribute("checked");
-  settings[settingName] = button.getAttribute("checked") != null;
-  updateOutput();
-}
-
 var currentTrack;
 var allTracks = [];
+var conversation = new Conversation();
+
 new Track();
 
 function handleEvent(e) {
@@ -66,7 +59,9 @@ function handleEvent(e) {
 
 var keydownEvents = [];
 document.addEventListener("keydown", function(e) {
-  if (!currentTrack.recording && !listeningForEditor && !focusedOnInput && e.key == "Backspace") {
+  var preventAction = listeningForEditor || focusedOnInput || currentTrack.recording;
+
+  if (!preventAction && e.key == "Backspace") {
     if (eventBeingEdited) {
       if (confirm("are you sure you want to delete this event? (warning: this action is not reversible!)")) {
         eventBeingEdited.remove();
@@ -84,26 +79,20 @@ document.addEventListener("keydown", function(e) {
 
   if (listeningForEditor) {
     stopListening();
-    eventBeingEdited.code = e.code;
-    eventBeingEdited.key = e.key;
-    eventBeingEdited.updateLogElement();
-    ui.eventInspector.key.textContent = eventBeingEdited.key;
-    ui.eventInspector.code.textContent = eventBeingEdited.code;
-    updateOutput();
+    eventBeingEdited.setKey(e);
   }
 
   if (currentTrack.recording) {
     e.preventDefault();
   }
 
-  if (!playing) {
-    if (!currentTrack.recording && settings.startRecordOnInput) {
-      currentTrack.toggleRecording(e);
-    }
-
-    if (e.key == "Enter" && settings.clearWithEnter) {
-      e.preventDefault();
-    }
+  if (
+    !playing &&
+    !preventAction &&
+    settings.startRecordOnInput &&
+    e.key != "Backspace"
+  ) {
+    currentTrack.toggleRecording(e);
   }
 
   handleEvent(e);
@@ -175,7 +164,15 @@ function tick() {
 
 function updateOutput() {
   for (let track of allTracks) {
-    track.simulator.printStateAtTimestamp(track.orderedEventLog, playheadTime);
+    track.simulator.printStateAtTimestamp(track.inputEvents, playheadTime);
+  }
+
+  if (settings.printConversation) {
+    var states = [];
+    for (let track of allTracks) {
+      states.push(track.simulator.lastPrintedState);
+    }
+    conversation.print(states);
   }
 }
 
@@ -285,39 +282,6 @@ function setInspectorMode(className) {
 // event inspector
 
 var eventBeingEdited;
-function startEditingEvent(e) {
-  if (eventBeingEdited && eventBeingEdited != e) {
-    stopEditingEvent(eventBeingEdited);
-  }
-  eventBeingEdited = e;
-  setInspectorMode("event");
-
-  const inspector = ui.eventInspector;
-
-  inspector.keyup.removeAttribute("checked");
-  inspector.keydown.removeAttribute("checked");
-
-  if (e.type == "keydown") {
-    inspector.keydown.setAttribute("checked", true);
-  } else {
-    inspector.keyup.setAttribute("checked", true);
-  }
-
-  inspector.code.textContent = e.code;
-  inspector.key.textContent = e.key;
-  inspector.listening.classList.add("gone");
-
-  inspector.local.value = e.localTimeStamp;
-  inspector.global.value = e.clip.startTime + e.localTimeStamp;
-}
-
-function stopEditingEvent(e) {
-  stopListening();
-  e.logElement.removeAttribute("checked");
-  setInspectorMode("clip");
-  listeningForEditor = false;
-  eventBeingEdited = null;
-}
 
 function stopListening() {
   listeningForEditor = false;
@@ -334,19 +298,11 @@ ui.eventInspector.listen.onclick = function() {
 };
 
 ui.eventInspector.keydown.onclick = function() {
-  ui.eventInspector.keydown.setAttribute("checked", true);
-  ui.eventInspector.keyup.removeAttribute("checked");
-  eventBeingEdited.type = "keydown";
-  eventBeingEdited.updateLogElement();
-  updateOutput();
+  eventBeingEdited.setEventType("keydown");
 };
 
 ui.eventInspector.keyup.onclick = function() {
-  ui.eventInspector.keyup.setAttribute("checked", true);
-  ui.eventInspector.keydown.removeAttribute("checked");
-  eventBeingEdited.type = "keyup";
-  eventBeingEdited.updateLogElement();
-  updateOutput();
+  eventBeingEdited.setEventType("keyup");
 };
 
 ui.eventInspector.local.onfocus =
@@ -368,10 +324,7 @@ function() {
 };
 
 ui.eventInspector.local.onchange = function() {
-  const e = eventBeingEdited;
-  if (!e) return;
-  e.setLocalTimeStamp(ui.eventInspector.local.value);
-  ui.eventInspector.value = e.clip.startTime + e.localTimeStamp;
+  if (eventBeingEdited) eventBeingEdited.setLocalTimeStamp(ui.eventInspector.local.value);
 };
 ui.eventInspector.global.onchange = function() {
   const e = eventBeingEdited;
@@ -379,7 +332,6 @@ ui.eventInspector.global.onchange = function() {
   const globalTime = e.localTimeStamp + e.clip.startTime;
   const delta = ui.eventInspector.global.value - globalTime;
   e.setLocalTimeStamp(e.localTimeStamp + delta);
-  ui.eventInspector.local.value = e.localTimeStamp;
 };
 
 ui.eventInspector.delete.onclick = function() {
@@ -438,3 +390,33 @@ ui.trackInspector.lock.onclick = function() {
 ui.trackInspector.delete.onclick = function() {
   currentTrack.remove();
 };
+
+// settings
+
+var settings = {
+  startRecordOnInput: false,
+  clearWithEnter: false,
+  assembleHangul: true,
+  useBakedStates: true,
+  printConversation: true
+};
+function toggleSetting(settingName, button) {
+  button.toggleAttribute("checked");
+  settings[settingName] = button.getAttribute("checked") != null;
+  updateOutput();
+}
+
+function toggleGlobalSettings(button) {
+  button.toggleAttribute("checked");
+  ui.globalSettings.classList.toggle("gone");
+
+  if (button.getAttribute("checked") != null) {
+
+  } else {
+
+  }
+}
+
+// safari drag cursor fix ??
+
+document.onselectstart = function(){ return false; }

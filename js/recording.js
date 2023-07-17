@@ -1,10 +1,10 @@
 class Track {
   constructor() {
     this.clips = [];
-    this.orderedEventLog = [];
+    this.inputEvents = [];
     this.recording = false;
     this.totalTime = 0;
-    this.simulator = new InputSimulator();
+    this.simulator = new Simulator();
 
     this.domElement = createElement("div", { parent: ui.timeline, className: "track" });
     this.selectorElement = createElement("div", { parent: this.domElement, className: "track-selector" });
@@ -47,7 +47,7 @@ class Track {
     document.body.classList.remove("locked");
     this.domElement.classList.remove("locked");
     ui.recordButton.removeAttribute("disabled");
-    ui.trackInspector.delete.removeAttribute("disabled");
+    if (allTracks.length > 1) ui.trackInspector.delete.removeAttribute("disabled");
     this.refreshLog();
   }
 
@@ -144,7 +144,7 @@ class Track {
       this.refreshLog();
     } else {
       currentClip.updateTimelineElement();
-      this.orderEventLog();
+      this.orderInputEvents();
       this.updateTotalTime();
       currentClip.updateLogElement();
       currentClip.select();
@@ -192,26 +192,23 @@ class Track {
       this.setTotalTime(Math.max(playheadTime + delta, this.totalTime));
       setPlayheadTime(playheadTime + delta);
 
-      this.orderEventLog();
+      this.orderInputEvents();
     }
   }
 
-  orderEventLog() {
-    this.orderedEventLog = [];
+  orderInputEvents() {
+    this.inputEvents = [];
 
     for (let c of this.clips) {
       for (let e of c.log) {
         if (e.localTimeStamp < c.trimStart) continue;
         if (e.localTimeStamp > c.trimStart + c.trimmedTime) continue;
 
-        this.orderedEventLog.push({
-          event: e,
-          globalTime: e.localTimeStamp + c.startTime
-        });
+        this.inputEvents.push(new InputEvent(e.strippedEvent, null, e.localTimeStamp + c.startTime));
       }
     }
 
-    this.orderedEventLog.sort((a, b) => a.globalTime - b.globalTime);
+    this.inputEvents.sort((a, b) => a.globalTime - b.globalTime);
   }
 
   remove() {
@@ -344,7 +341,7 @@ class Clip {
     }
     this.track.clips.splice(this.index, 1);
 
-    this.track.orderEventLog();
+    this.track.orderInputEvents();
     this.track.updateTotalTime();
     this.track.refreshLog();
 
@@ -366,21 +363,18 @@ class Clip {
     track.clips.push(this);
 
     this.track.domElement.appendChild(this.domElement);
-    track.orderEventLog();
+    track.orderInputEvents();
     track.updateTotalTime();
     track.refreshLog();
   }
 
   updateLogElement() {
-    const events = [];
+    const inputEvents = [];
     for (let e of this.log) {
-      events.push({
-        globalTime: e.localTimeStamp,
-        event: e
-      });
+      inputEvents.push(new InputEvent(e, null, e.localTimeStamp));
     }
 
-    this.logElement.textContent = this.track.simulator.getStateAtTimeStamp(events, this.totalTime).textContent + " ("+this.log.length+")";
+    this.logElement.textContent = this.track.simulator.getStateAtTimeStamp(inputEvents, this.totalTime).textContent + " ("+this.log.length+")";
   }
 
   reorderLog() {
@@ -420,7 +414,7 @@ class Clip {
     clipSelected = null;
     this.domElement.classList.remove("selected");
     this.selected = false;
-    if (eventBeingEdited) stopEditingEvent(eventBeingEdited);
+    if (eventBeingEdited) eventBeingEdited.deselect();
     setInspectorMode("track");
   }
 
@@ -457,7 +451,7 @@ class Clip {
 
   setStartTime(value) {
     this.startTime = value;
-    this.track.orderEventLog();
+    this.track.orderInputEvents();
     this.track.updateTotalTime();
     this.updateTimelineElement();
 
@@ -470,7 +464,7 @@ class Clip {
     this.trimStart = clamp(value, 0, this.totalTime - this.minClipWidth);
     this.trimmedTime = this.totalTime - this.trimStart;
 
-    this.track.orderEventLog();
+    this.track.orderInputEvents();
     this.track.updateTotalTime();
     this.updateTimelineElement();
     this.refreshLog();
@@ -483,7 +477,7 @@ class Clip {
   setTrimmedTime(value) {
     this.trimmedTime = clamp(value, this.minClipWidth, this.totalTime);
 
-    this.track.orderEventLog();
+    this.track.orderInputEvents();
     this.track.updateTotalTime();
     this.updateTimelineElement();
     this.refreshLog();
@@ -519,8 +513,7 @@ class Clip {
     const copy = new Clip(this.track);
 
     for (let e of this.log) {
-      const eventCopy = new RecordedEvent(e, { localTimeStamp: e.localTimeStamp, parentNode: copy.domElement, clip: copy, index: e.index });
-      copy.log.push(eventCopy);
+      new RecordedEvent(e, copy, e.localTimeStamp);
     }
 
     copy.setStartTime(playheadTime - this.trimStart);
@@ -569,12 +562,7 @@ class Clip {
 
     var localTimeStamp = e.timeStamp - this.recordStartTime;
 
-    this.log.push(new RecordedEvent(e, {
-      localTimeStamp: localTimeStamp,
-      parentNode: this.domElement,
-      index: this.log.length,
-      clip: this
-    }));
+    new RecordedEvent(e, this, localTimeStamp);
 
     this.totalTime = localTimeStamp;
     this.trimmedTime = this.totalTime - this.trimStart;
@@ -588,36 +576,30 @@ class Clip {
 }
 
 class RecordedEvent {
-  constructor(e, props) {
-    this.type = e.type;
-    this.key = e.key;
-    this.code = e.code;
+  constructor(e, clip, localTimeStamp) {
+    this.strippedEvent = new StrippedEvent(e);
+    this.localTimeStamp = localTimeStamp;
 
-    if ('localTimeStamp' in props) {
-      this.localTimeStamp = props.localTimeStamp;
-    }
+    this.domElement = createElement("div", { parent: clip.domElement, className: e.type+" timeline-event" });
 
-    if (props.parentNode) {
-      this.domElement = createElement("div", { parent: props.parentNode, className: e.type+" timeline-event" });
+    this.logElement = createElement("button");
+    this.logElement.onclick = function(e) {
+      this.logElement.toggleAttribute("checked");
+      if (this.logElement.getAttribute("checked") != null) {
+        this.select();
+      } else {
+        this.deselect();
+      }
+    }.bind(this);
+    this.updateLogElement();
 
-      this.logElement = createElement("button");
-      this.logElement.onclick = function(e) {
-        this.logElement.toggleAttribute("checked");
-        if (this.logElement.getAttribute("checked") != null) {
-          startEditingEvent(this);
-        } else {
-          stopEditingEvent(this);
-        }
-      }.bind(this);
-      this.updateLogElement();
-
-      this.clip = props.clip;
-      this.index = props.index;
-    }
+    this.clip = clip;
+    this.index = this.clip.log.length;
+    this.clip.log.push(this);
   }
 
   updateLogElement() {
-    this.logElement.innerHTML = this.type+" "+this.code+" <em>"+this.key+"</em>";
+    this.logElement.innerHTML = this.strippedEvent.type+" "+this.strippedEvent.code+" <em>"+this.strippedEvent.key+"</em>";
   }
 
   setLocalTimeStamp(value) {
@@ -627,8 +609,13 @@ class RecordedEvent {
     this.clip.reorderLog();
     this.clip.updateTimelineElement();
     this.clip.updateLength();
-    this.clip.track.orderEventLog();
+    this.clip.track.orderInputEvents();
     this.clip.track.updateTotalTime();
+
+    if (this == eventBeingEdited) {
+      ui.eventInspector.global.value = this.clip.startTime + this.localTimeStamp;
+      ui.eventInspector.local.value = this.localTimeStamp;
+    }
 
     updateOutput();
   }
@@ -645,7 +632,7 @@ class RecordedEvent {
     this.logElement.remove();
 
     if (eventBeingEdited == this) {
-      stopEditingEvent(eventBeingEdited);
+      eventBeingEdited.deselect();
     }
 
     if (this.clip.log.length > 0) {
@@ -656,14 +643,67 @@ class RecordedEvent {
         e = this.clip.log[this.index - 1];
       }
       e.logElement.setAttribute("checked", true);
-      startEditingEvent(e);
+      e.select();
 
-      this.clip.track.orderEventLog();
+      this.clip.track.orderInputEvents();
       this.clip.refreshLog();
       this.clip.updateLogElement();
       updateOutput();
     } else {
       this.clip.remove();
     }
+  }
+
+  select() {
+    if (eventBeingEdited && eventBeingEdited != this) {
+      eventBeingEdited.deselect();
+    }
+    eventBeingEdited = this;
+    setInspectorMode("event");
+
+    const inspector = ui.eventInspector;
+
+    inspector.keyup.removeAttribute("checked");
+    inspector.keydown.removeAttribute("checked");
+    inspector[this.strippedEvent.type].setAttribute("checked", true);
+
+    inspector.code.textContent = this.strippedEvent.code;
+    inspector.key.textContent = this.strippedEvent.key;
+    inspector.listening.classList.add("gone");
+
+    inspector.local.value = this.localTimeStamp;
+    inspector.global.value = this.clip.startTime + this.localTimeStamp;
+  }
+
+  deselect() {
+    stopListening();
+    this.logElement.removeAttribute("checked");
+    setInspectorMode("clip");
+    eventBeingEdited = null;
+  }
+
+  setEventType(type) {
+    this.strippedEvent.type = type;
+    this.updateLogElement();
+    updateOutput();
+
+    if (this == eventBeingEdited) {
+      ui.eventInspector.keydown.removeAttribute("checked");
+      ui.eventInspector.keyup.removeAttribute("checked");
+      ui.eventInspector[type].setAttribute("checked", true);
+    }
+  }
+
+  setKey(e) {
+    this.strippedEvent.code = e.code;
+    this.strippedEvent.key = e.key;
+    this.updateLogElement();
+
+    if (this == eventBeingEdited) {
+      ui.eventInspector.key.textContent = this.strippedEvent.key;
+      ui.eventInspector.code.textContent = this.strippedEvent.code;
+    }
+
+    updateOutput();
   }
 }

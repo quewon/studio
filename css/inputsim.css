@@ -1,0 +1,46 @@
+.output {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  pointer-events: none;
+
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+.output .caret {
+  display: inline;
+  min-width: 1ch;
+  min-height: 1em;
+  background: black;
+  color: white;
+}
+.caret:empty::before {
+  content: "_";
+  color: black;
+}
+
+.conversation {
+
+}
+
+.dialogue {
+  /* background: gray; */
+  /* padding: .25rem; */
+  border-radius: 5px;
+  margin-bottom: .25rem;
+  /* color: white; */
+  max-width: 45%;
+  word-break: break-word;
+}
+.dialogue.c0 {
+  text-align: right;
+  margin-left: auto;
+}
+.dialogue.c1 {
+
+}

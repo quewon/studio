@@ -3,9 +3,11 @@
   <head>
     <meta charset="utf-8">
     <title>text studio</title>
+    <link rel="stylesheet" href="css/inputsim.css">
     <style media="screen">
       :root {
         --lightergray: rgb(230, 230, 230);
+        --togglepink: rgba(255, 0, 0, .1);
       }
 
       body {
@@ -23,6 +25,7 @@
         font-size: inherit;
         font-family: inherit;
         cursor: pointer;
+        word-break: break-word;
 
         border: 1px solid black;
         border-radius: 3px;
@@ -32,7 +35,7 @@
         background: var(--lightergray);
       }
       button[checked] {
-        background: rgba(255, 0, 0, .1);
+        background: var(--togglepink);
       }
       button:disabled {
         border-color: var(--lightergray) !important;
@@ -184,7 +187,7 @@
         background: white;
       }
 
-      #component-log, #inspector {
+      #component-log, #inspector, #global-settings {
         max-height: 10rem;
         pointer-events: auto;
         border: 1px solid black;
@@ -315,29 +318,8 @@
         content: "stop"
       }
 
-      .output {
-        font-family: monospace;
-        white-space: pre-wrap;
-        word-break: break-word;
-        pointer-events: none;
-
-        -webkit-touch-callout: none; /* iOS Safari */
-          -webkit-user-select: none; /* Safari */
-           -khtml-user-select: none; /* Konqueror HTML */
-             -moz-user-select: none; /* Old versions of Firefox */
-              -ms-user-select: none; /* Internet Explorer/Edge */
-                  user-select: none; /* Non-prefixed version, currently
-                                        supported by Chrome, Edge, Opera and Firefox */
-      }
-      .output .caret {
-        display: inline;
-        min-width: 1ch;
-        min-height: 1em;
-        background: black;
-        color: white;
-      }
-      .caret:empty::before {
-        content: "_";
+      body.playing button[name='play'], body.recording button[name='record'] {
+        background-color: var(--togglepink)
       }
 
       .output.recording {
@@ -345,6 +327,9 @@
       }
       .output.recording .caret {
         background: red;
+      }
+      .output.recording .caret:empty::before {
+        color: red;
       }
 
       body.dragging, body.dragging * {
@@ -381,19 +366,26 @@
       <button onclick="togglePlaying()" name="play"></button>
       <button onclick="setPlayheadTime(totalTime)" name="toend"></button>
       <div class="grow"></div>
-      <button class="noselect" onclick="toggleSetting('startRecordOnInput', this)">start recording on keydown</button>
-      <button class="noselect" onclick="toggleSetting('clearWithEnter', this)">clear with enter</button>
+      <button onclick="toggleGlobalSettings(this)">settings</button>
     </div>
     <div id="timeline-info" class="noclick noselect"></div>
     <div id="timeline">
       <div id="timeline-ruler"></div>
       <div id="playhead"></div>
     </div>
-    <div class="flex noclick">
-      <div id="component-log" class="flex column">
-
+    <div class="flex column noclick">
+      <div id="global-settings" class="gone">
+        <button onclick="toggleSetting('startRecordOnInput', this)">start recording on keydown</button>
+        <button onclick="toggleSetting('clearWithEnter', this)">clear with enter</button>
+        <button checked onclick="toggleSetting('assembleHangul', this)">한글 인풋 지원 | hangul input support</button>
+        <br><br>
+        thanks to <a href="https://github.com/e-/Hangul.js" target="_blank">Hangul.js</a>, developed by Jaemin Jo!!
       </div>
-      <div id="inspector" class="flex column">
+      <div class="flex">
+        <div id="component-log" class="flex column">
+
+        </div>
+        <div id="inspector" class="flex column">
         <div id="track-inspector"><button name="lock" class="serif"></button>
 <button disabled name="delete" class="serif">delete track</button></div>
 
@@ -415,6 +407,7 @@ TRIM LENGTH: <input type="number" name="trim-length" value="0">
 GLOBAL TIMESTAMP: <input type="number" name="global" value="0">
 
                   <button name="delete" class="serif">delete event</button></div>
+        </div>
       </div>
     </div>
     <div class="noselect">
