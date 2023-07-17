@@ -316,7 +316,7 @@ class Clip {
       e.stopPropagation();
     };
     this.resizeHandles = new ClipResizeHandles(this);
-    this.logElement = createElement("button");
+    this.logElement = createElement("button", { textContent: "clip in progress..." });
     this.logElement.onclick = function() {
       this.select();
     }.bind(this);
