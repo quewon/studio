@@ -375,6 +375,8 @@ class Clip {
   updateLogElement() {
     const inputEvents = [];
     for (let e of this.log) {
+      if (e.localTimeStamp < this.trimStart || e.localTimeStamp > this.trimStart + this.trimmedTime) continue;
+
       inputEvents.push(new InputEvent(e.strippedEvent, null, e.localTimeStamp));
     }
 
@@ -477,6 +479,7 @@ class Clip {
     this.track.updateTotalTime();
     this.updateTimelineElement();
     this.refreshLog();
+    this.updateLogElement();
 
     if (this == clipSelected) {
       updateClipInspector();
@@ -490,6 +493,7 @@ class Clip {
     this.track.updateTotalTime();
     this.updateTimelineElement();
     this.refreshLog();
+    this.updateLogElement();
 
     if (this == clipSelected) {
       updateClipInspector();
