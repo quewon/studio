@@ -555,6 +555,11 @@ function importProject(data) {
   try {
     if (data.SETTINGS) initSettings(data.SETTINGS);
 
+    var isEmpty = false;
+    if (allTracks.length == 1 && currentTrack.clips.length == 0) {
+      isEmpty = true;
+    }
+
     if (data.TRACKS) {
       for (let t of data.TRACKS) {
         var track = new Track();
@@ -571,10 +576,14 @@ function importProject(data) {
         }
         if (t.selected) track.select();
         if (t.locked) track.lock();
-
-        setPlayheadTime(t.totalTime);
       }
     }
+
+    if (isEmpty) {
+      allTracks[0].remove();
+    }
+
+    // setPlayheadTime(totalTime);
 
     conversation.clear();
     updateOutput();
@@ -586,6 +595,11 @@ function importProject(data) {
 function importBaked(data) {
   try {
     if (data.SETTINGS) initSettings(data.SETTINGS);
+
+    var isEmpty = false;
+    if (allTracks.length == 1 && currentTrack.clips.length == 0) {
+      isEmpty = true;
+    }
 
     if (data.TRACKS) {
       for (let t of data.TRACKS) {
@@ -600,9 +614,17 @@ function importBaked(data) {
           clip.setStartTime(0);
           clip.setTrimmedTime(clip.totalTime);
         }
-        setPlayheadTime(track.totalTime);
       }
     }
+
+    if (isEmpty) {
+      allTracks[0].remove();
+    }
+
+    // setPlayheadTime(totalTime);
+
+    conversation.clear();
+    updateOutput();
   } catch {
     alert("file could not be fully loaded...");
   }

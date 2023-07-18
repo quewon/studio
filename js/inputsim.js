@@ -384,7 +384,6 @@ class Conversation {
       } else {
         text.domElement = createElement("div", { parent: this.domElement, className: text.className, textContent: text.textContent });
         this.printedTexts.push(text);
-        this.domElement.scrollTop = this.domElement.scrollHeight;
       }
     }
 
@@ -408,5 +407,7 @@ class Conversation {
         this.typingElements.push(createElement("div", { parent: this.domElement, className: "typing c"+i, textContent: "user is typing..." }));
       }
     }
+
+    this.domElement.scrollTop = this.domElement.scrollHeight;
   }
 }

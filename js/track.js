@@ -859,6 +859,8 @@ class RecordedEvent {
       ui.eventInspector.code.textContent = this.strippedEvent.code;
     }
 
+    this.clip.track.orderInputEvents();
+
     updateOutput();
   }
 }
