@@ -677,5 +677,6 @@ function readFile(input) {
     fileReader.onload = function(e) {
       importJSON(e.target.result);
     }
+    input.value = "";
   }
 }
