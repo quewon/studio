@@ -16,7 +16,8 @@ class SimulationState {
     this.selectionStart = state.selectionStart || 0;
     this.selectionEnd = state.selectionEnd || 0;
     this.selectionDirection = state.selectionDirection || 0;
-    this.shiftKey = state.shiftKey || 0;
+    this.shiftKey = state.shiftKey || false;
+    this.metaKey = state.metaKey || false;
 
     this.clearedText = [];
     if (state.clearedText) {
@@ -28,10 +29,10 @@ class SimulationState {
 }
 
 class InputEvent {
-  constructor(e, state, globalTime) {
+  constructor(e, state, timeStamp) {
     this.strippedEvent = new StrippedEvent(e);
-    this.bakedState = state || null;
-    this.globalTime = globalTime || 0;
+    this.bakedState = state ? new SimulationState(state) : null;
+    this.timeStamp = timeStamp || 0;
   }
 }
 
@@ -44,7 +45,7 @@ class Simulator {
 
   simulateEvent(state, inputEvent) {
     const e = inputEvent.strippedEvent;
-    const timeStamp = inputEvent.globalTime;
+    const timeStamp = inputEvent.timeStamp;
 
     var copy = new SimulationState(state);
 
@@ -80,9 +81,12 @@ class Simulator {
             copy.shiftKey = true;
             break;
 
+          case "Meta":
+            copy.metaKey = true;
+            break;
+
           case "Alt":
           case "Control":
-          case "Meta":
           case "Escape":
           case "ArrowUp":
           case "ArrowDown":
@@ -136,6 +140,14 @@ class Simulator {
           default:
             if (state.shiftKey) {
               insert = e.key.toUpperCase();
+            } else if (state.metaKey) {
+              switch (e.key) {
+                case "a":
+                  copy.selectionStart = 0;
+                  copy.selectionEnd = text.length;
+                  copy.selectionDirection = -1;
+                  break;
+              }
             } else {
               insert = e.key;
             }
@@ -148,8 +160,14 @@ class Simulator {
         }
       }
     } else if (e.type == "keyup") {
-      if (e.key == "Shift") {
-        copy.shiftKey = false;
+      switch (e.key) {
+        case "Shift":
+          copy.shiftKey = false;
+          break;
+
+        case "Meta":
+          copy.metaKey = false;
+          break;
       }
     }
 
@@ -173,10 +191,10 @@ class Simulator {
     var state = new SimulationState();
 
     for (let e of inputEvents) {
-      if (e.globalTime > timeStamp) {
+      if (e.timeStamp > timeStamp) {
         return state;
       }
-      state = settings.useBakedState && e.bakedState ? e.bakedState : this.simulateEvent(state, e);
+      state = settings.useBakedStates && e.bakedState ? e.bakedState : this.simulateEvent(state, e);
     }
 
     return state;
@@ -216,6 +234,8 @@ class Simulator {
     this.caretElement.appendChild(range.extractContents());
 
     range.insertNode(this.caretElement);
+
+    return state;
   }
 
   printStateAtTimestamp(inputEvents, timeStamp) {
@@ -226,8 +246,25 @@ class Simulator {
     if (!events || events.length == 0) {
       this.clearState();
     } else {
-      this.printState(this.getStateAtTimeStamp(inputEvents, events[events.length - 1].globalTimeStamp));
+      this.printState(this.getStateAtTimeStamp(inputEvents, events[events.length - 1].timeStampStamp));
     }
+  }
+
+  getBakedEvents(inputEvents) {
+    var events = [];
+    var state = new SimulationState();
+
+    var originalBakeSetting = settings.useBakedStates;
+    settings.useBakedStates = true;
+
+    for (let e of inputEvents) {
+      state = this.simulateEvent(state, e);
+      events.push(new InputEvent(e.strippedEvent, new SimulationState(state), e.timeStamp));
+    }
+
+    settings.useBakedStates = originalBakeSetting;
+
+    return events;
   }
 
   remove() {
@@ -252,9 +289,52 @@ class Conversation {
     }
   }
 
-  print(states) {
-    this.clear();
+  getBaked(bakedTracks) {
+    var output = [];
+    var timeStamps = [];
 
+    for (let bakedEvents of bakedTracks) {
+      for (let e of bakedEvents) {
+        timeStamps.push(e.timeStamp);
+      }
+    }
+
+    // remove duplicate timestamps
+    var uniqueTimestamps = [];
+    for (let p of timeStamps) {
+      if (uniqueTimestamps.indexOf(p) == -1) {
+        uniqueTimestamps.push(p);
+      }
+    }
+    uniqueTimestamps.sort((a, b) => a - b);
+
+    var originalBakeSetting = settings.useBakedStates;
+    settings.useBakedStates = true;
+
+    for (let p of uniqueTimestamps) {
+      var states = [];
+      for (let bakedEvents of bakedTracks) {
+        states.push(Simulator.prototype.getStateAtTimeStamp(bakedEvents, p));
+      }
+
+      var bakedFrame = this.getBakedFrame(states);
+
+      if (output.length > 0) {
+        const previousFrame = output[output.length - 1];
+        if (previousFrame.length != bakedFrame.length) {
+          output.push(bakedFrame);
+        }
+      } else {
+        output.push(bakedFrame);
+      }
+    }
+
+    settings.useBakedStates = originalBakeSetting;
+
+    return output;
+  }
+
+  getBakedFrame(states) {
     var texts = [];
 
     for (let i=0; i<states.length; i++) {
@@ -273,6 +353,14 @@ class Conversation {
     }
 
     texts.sort((a, b) => a.timeStamp - b.timeStamp);
+
+    return texts;
+  }
+
+  print(states) {
+    this.clear();
+
+    var texts = this.getBakedFrame(states);
 
     for (let text of texts) {
       createElement("div", { parent: this.domElement, className: text.className, textContent: text.textContent });

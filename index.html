@@ -26,10 +26,13 @@
         font-family: inherit;
         cursor: pointer;
         word-break: break-word;
+        white-space: pre;
 
         border: 1px solid black;
         border-radius: 3px;
         background: white;
+
+        margin-bottom: .25rem;
       }
       button:not(:disabled):active {
         background: var(--lightergray);
@@ -66,7 +69,6 @@
 
       #timeline-info {
         font-family: monospace;
-        margin-top: .5rem;
       }
       #timeline {
         position: relative;
@@ -370,9 +372,10 @@
     </div>
     <div class="flex column noclick">
       <div id="global-settings" class="gone">
-        <button onclick="toggleSetting('startRecordOnInput', this)">start recording on keydown</button>
-        <button checked onclick="toggleSetting('clearWithEnter', this)">clear with enter</button>
-        <button checked onclick="toggleSetting('assembleHangul', this)">한글 인풋 지원 | hangul input support</button>
+        <button name="startRecordOnInput">start recording on keydown</button>
+        <button name="clearWithEnter">clear with enter</button>
+        <button name="printConversation">print conversation</button>
+        <button name="assembleHangul">한글 인풋 지원 | hangul input support</button>
         <br><br>
         thanks to <a href="https://github.com/e-/Hangul.js" target="_blank">Hangul.js</a>, developed by Jaemin Jo!!
       </div>
@@ -385,22 +388,21 @@
 
 <button name="lock" class="serif"></button>
 
-PLAYHEAD: <input type="number" name="playhead" value="0">
+PLAYHEAD: <input type="number" name="playhead" value="0"> ms
 (numbers here are more accurate.)
 
           <button disabled name="delete" class="serif">delete track</button></div>
 
         <div id="clip-inspector">CLIP INSPECTOR
 
-<button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart)" title="move playhead to start of clip">|←</button> <button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart + clipSelected.trimmedTime)" title="move playhead to end of clip">→|</button> <button class="serif" onclick="clipSelected.split(playheadTime)" title="split clip at playhead">split</button> <button name="duplicate" class="serif" title="duplicate clip at playhead">duplicate</button> <button class="serif" onclick="clipSelected.setStartTime(playheadTime - clipSelected.trimStart)">move to playhead</button>
-
+<button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart)" title="move playhead to start of clip">|←</button> <button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart + clipSelected.trimmedTime)" title="move playhead to end of clip">→|</button> <button class="serif" onclick="clipSelected.setStartTime(playheadTime - clipSelected.trimStart)">move to playhead</button> <button class="serif" onclick="clipSelected.split(playheadTime)" title="split clip at playhead">split</button> <button name="duplicate" class="serif" title="duplicate clip at playhead">duplicate</button>
 <button class="serif" onclick="prepareJoin(this)" title="start merging clips together" name="join">merge mode</button>
 
-  TIMESTAMP: <input type="number" name="timestamp" value="0">
-     LENGTH: <span name="length"></span>
+  TIMESTAMP: <input type="number" name="timestamp" value="0"> ms
+     LENGTH: <span name="length"></span> ms
 
- TRIM START: <input type="number" name="trim-start" value="0">
-TRIM LENGTH: <input type="number" name="trim-length" value="0">
+ TRIM START: <input type="number" name="trim-start" value="0"> ms
+TRIM LENGTH: <input type="number" name="trim-length" value="0"> ms
 
              <button name="delete" class="serif">delete clip</button></div>
 
@@ -413,8 +415,8 @@ TRIM LENGTH: <input type="number" name="trim-length" value="0">
             CODE: <span name="code">a</span>
              KEY: <span name="key">a</span> <button name="listen" class="serif"></button> <span name="listening"><i>listening...</i></span>
 
- LOCAL TIMESTAMP: <input type="number" name="local" value="0">
-GLOBAL TIMESTAMP: <input type="number" name="global" value="0">
+ LOCAL TIMESTAMP: <input type="number" name="local" value="0"> ms
+GLOBAL TIMESTAMP: <input type="number" name="global" value="0"> ms
 
                   <button name="delete" class="serif">delete event</button></div>
         </div>

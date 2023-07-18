@@ -210,7 +210,7 @@ class Track {
       }
     }
 
-    this.inputEvents.sort((a, b) => a.globalTime - b.globalTime);
+    this.inputEvents.sort((a, b) => a.timeStamp - b.timeStamp);
   }
 
   remove() {
@@ -380,7 +380,16 @@ class Clip {
       inputEvents.push(new InputEvent(e.strippedEvent, null, e.localTimeStamp));
     }
 
-    this.logElement.textContent = this.track.simulator.getStateAtTimeStamp(inputEvents, this.totalTime).textContent + " ("+this.log.length+")";
+    const originalSetting = settings.clearWithEnter;
+    settings.clearWithEnter = false;
+
+    var text = this.track.simulator.getStateAtTimeStamp(inputEvents, this.totalTime).textContent;
+    if (text[text.length - 1] == "\n" && text[text.length - 2] == "\r") {
+      text = text.substring(0, text.length - 2);
+    }
+    this.logElement.textContent = text + " ("+this.log.length+")";
+
+    settings.clearWithEnter = originalSetting;
   }
 
   reorderLog() {
@@ -586,8 +595,8 @@ class Clip {
     this.setTrimmedTime(this.totalTime);
 
     for (let e of this.log) {
-      const globalTimeStamp = e.localTimeStamp + start;
-      e.localTimeStamp = globalTimeStamp - this.startTime;
+      const timeStampStamp = e.localTimeStamp + start;
+      e.localTimeStamp = timeStampStamp - this.startTime;
     }
   }
 
@@ -616,22 +625,24 @@ class Clip {
     this.setTrimmedTime(trimmedTime);
 
     for (let e of this.log) {
-      var globalTimeStamp = e.localTimeStamp + startA;
-      e.localTimeStamp = globalTimeStamp - start;
+      var timeStampStamp = e.localTimeStamp + startA;
+      e.localTimeStamp = timeStampStamp - start;
     }
 
     for (let e of clip.log) {
       e.addToClip(this);
 
-      var globalTimeStamp = e.localTimeStamp + clip.startTime;
-      e.localTimeStamp = globalTimeStamp - start;
+      var timeStampStamp = e.localTimeStamp + clip.startTime;
+      e.localTimeStamp = timeStampStamp - start;
     }
-
-    // this.track.updateTotalTime();
 
     this.reorderLog();
     this.updateTimelineElement();
     this.updateLength();
+
+    if (this.track != clip.track) {
+      this.track.orderInputEvents();
+    }
 
     clip.remove();
   }

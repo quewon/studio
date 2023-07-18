@@ -158,10 +158,6 @@ function tick() {
       stopPlaying();
     }
   }
-
-  if (playing || currentTrack.recording) {
-    updateTimeline();
-  }
 }
 
 function updateOutput() {
@@ -213,15 +209,6 @@ function setTotalTime(value) {
         clip.updateTimelineElement();
       }
     }
-  }
-}
-
-function updateTimeline() {
-  for (let track of allTracks) {
-    for (let clip of track.clips) {
-      clip.updateTimelineElement();
-    }
-    if (track.currentClip) track.currentClip.updateTimelineElement();
   }
 }
 
@@ -429,17 +416,41 @@ ui.trackInspector.delete.onclick = function() {
 
 // settings
 
-var settings = {
+var settings = {};
+
+initSettings({
   minClipWidth: 10,
   startRecordOnInput: false,
   clearWithEnter: true,
   assembleHangul: true,
   useBakedStates: true,
   printConversation: true
-};
+});
+
+function initSettings(settingData) {
+  for (let setting in settingData) {
+    var button = document.querySelector("#global-settings button[name='"+setting+"']");
+    if (button) {
+      if (settingData[setting]) {
+        button.setAttribute("checked", true);
+      } else {
+        button.removeAttribute("checked");
+      }
+      if (button.onclick == null) {
+        button.onclick = function() {
+          toggleSetting(setting, this);
+        };
+      }
+    }
+    settings[setting] = settingData[setting];
+  }
+}
+
 function toggleSetting(settingName, button) {
   button.toggleAttribute("checked");
   settings[settingName] = button.getAttribute("checked") != null;
+
+  conversation.clear();
   updateOutput();
 }
 
@@ -450,4 +461,123 @@ function toggleGlobalSettings(button) {
 
 // safari drag cursor fix ??
 
-document.onselectstart = function(){ return false; }
+document.onselectstart = function() { return false; }
+
+// project data
+
+function exportProject() {
+  var data = {
+    isProject: true,
+    TRACKS: [],
+    SETTINGS: settings
+  }
+
+  for (let track of allTracks) {
+    var simplifiedTrack = {
+      clips: [],
+      totalTime: track.totalTime,
+      selected: track.selected,
+      locked: track.locked
+    };
+
+    for (let clip of track.clips) {
+      var simplifiedClip = {
+        log: [],
+        startTime: clip.startTime,
+        totalTime: clip.totalTime,
+        trimStart: clip.trimStart,
+        trimmedTime: clip.trimmedTime
+      };
+      for (let e of clip.log) {
+        simplifiedClip.log.push({
+          strippedEvent: e.strippedEvent,
+          localTimeStamp: e.localTimeStamp
+        });
+      }
+      simplifiedTrack.clips.push(simplifiedClip);
+    }
+
+    data.TRACKS.push(simplifiedTrack);
+  }
+
+  return JSON.stringify(data, null, 2);
+}
+
+function exportBaked() {
+  var data = {
+    isBaked: true,
+    TRACKS: [],
+    SETTINGS: {}
+  };
+
+  for (let setting in settings) {
+    data.SETTINGS[setting] = settings[setting];
+  }
+
+  for (let track of allTracks) {
+    const bakedEvents = track.simulator.getBakedEvents(track.inputEvents);
+    data.TRACKS.push(bakedEvents);
+  }
+
+  if (settings.printConversation) {
+    data.CONVERSATION = conversation.getBaked(data.TRACKS);
+  }
+
+  return JSON.stringify(data, null, 2);
+}
+
+function importProject(json) {
+  var data = JSON.parse(json);
+
+  if (!('isProject' in data)) {
+    alert("this is not a project file!");
+    return;
+  }
+
+  initSettings(data.SETTINGS);
+
+  for (let t of data.TRACKS) {
+    var track = new Track();
+    track.setTotalTime(t.totalTime);
+    for (let c of t.clips) {
+      var clip = new Clip(track);
+      for (let e of c.log) {
+        new RecordedEvent(e.strippedEvent, clip, e.localTimeStamp);
+      }
+      clip.startTime = c.startTime;
+      clip.totalTime = c.totalTime;
+      clip.trimStart = c.trimStart;
+      clip.setTrimmedTime(c.trimmedTime);
+    }
+    if (t.selected) track.select();
+    if (t.locked) track.lock();
+
+    setPlayheadTime(t.totalTime);
+  }
+}
+
+function importBaked(json) {
+  var data = JSON.parse(json);
+
+  if (!('isBaked' in data)) {
+    alert("this is not a recording file!");
+    return;
+  }
+
+  initSettings(data.SETTINGS);
+
+  for (let t of data.TRACKS) {
+    var track = new Track();
+    if (t.length > 0) {
+      var clip = new Clip(track);
+      for (let inputEvent of t) {
+        new RecordedEvent(inputEvent.strippedEvent, clip, inputEvent.timeStamp);
+      }
+      clip.updateLogElement();
+      clip.totalTime = t[t.length - 1].timeStamp;
+      clip.setStartTime(0);
+      clip.setTrimmedTime(clip.totalTime);
+    }
+    setPlayheadTime(track.totalTime);
+  }
+}
