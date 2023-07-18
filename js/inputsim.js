@@ -284,12 +284,17 @@ class Conversation {
   constructor() {
     this.domElement = createElement("div", { parent: document.body, className: "conversation" });
     this.printedTexts = [];
+    this.typingElements = [];
   }
 
   clear() {
     for (let i=this.printedTexts.length-1; i>=0; i--) {
-      printed.domElement.remove();
+      this.printedTexts[i].domElement.remove();
       this.printedTexts.splice(i, 1);
+    }
+    for (let i=this.typingElements.length-1; i>=0; i--) {
+      this.typingElements[i].remove();
+      this.typingElements.splice(i, 0);
     }
   }
 
@@ -372,6 +377,7 @@ class Conversation {
       } else {
         text.domElement = createElement("div", { parent: this.domElement, className: text.className, textContent: text.textContent });
         this.printedTexts.push(text);
+        this.domElement.scrollTop = this.domElement.scrollHeight;
       }
     }
 
@@ -381,6 +387,18 @@ class Conversation {
       if (!text) {
         printed.domElement.remove();
         this.printedTexts.splice(i, 1);
+      }
+    }
+
+    for (let i=this.typingElements.length-1; i>=0; i--) {
+      this.typingElements[i].remove();
+      this.typingElements.splice(i, 0);
+    }
+
+    for (let i=0; i<states.length; i++) {
+      const state = states[i];
+      if (state.textContent != "" && state.selectionStart == state.selectionEnd) {
+        this.typingElements.push(createElement("div", { parent: this.domElement, className: "typing c"+i, textContent: "user is typing..." }));
       }
     }
   }

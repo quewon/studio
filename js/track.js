@@ -193,8 +193,6 @@ class Track {
     if (this.recording) {
       this.setTotalTime(Math.max(playheadTime + delta, this.totalTime));
       setPlayheadTime(playheadTime + delta);
-
-      this.orderInputEvents(); //necessary to update output
     }
   }
 
@@ -239,6 +237,7 @@ class Track {
       ui.trackInspector.delete.removeAttribute("disabled");
     }
 
+    conversation.clear();
     updateOutput();
   }
 }
@@ -351,6 +350,8 @@ class Clip {
 
     this.domElement.remove();
     this.track = null;
+
+    conversation.clear();
   }
 
   addToTrack(track) {
@@ -370,6 +371,8 @@ class Clip {
     track.orderInputEvents();
     track.updateTotalTime();
     track.refreshLog();
+
+    conversation.clear();
   }
 
   updateLogElement() {
@@ -527,9 +530,17 @@ class Clip {
     }
 
     this.setStartTime(this.dragInitials.startTime + dx);
+
+    conversation.clear();
+    updateOutput();
+
+    this.previousMousePosition = mousePosition;
   }
 
   drop() {
+    conversation.clear();
+    updateOutput();
+
     clipDragging = null;
     document.body.classList.remove("dragging");
     this.domElement.classList.remove("dragging");
@@ -688,6 +699,8 @@ class Clip {
 
     this.totalTime = localTimeStamp;
     this.trimmedTime = this.totalTime - this.trimStart;
+
+    this.track.orderInputEvents();
   }
 
   remove() {

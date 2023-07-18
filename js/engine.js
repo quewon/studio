@@ -561,6 +561,9 @@ function importProject(data) {
         setPlayheadTime(t.totalTime);
       }
     }
+
+    conversation.clear();
+    updateOutput();
   } catch {
     alert("file could not be fully loaded...");
   }
