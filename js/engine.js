@@ -183,11 +183,12 @@ function setPlayheadTime(value) {
   if (totalTime == 0) {
     ui.trackInspector.playhead.value = 0;
     playheadTime = 0;
+    ui.playhead.style.left = "0";
   } else {
     ui.trackInspector.playhead.value = playheadTime;
+    ui.playhead.style.left = (playheadTime / trackRatio)+"%";
   }
 
-  ui.playhead.style.left = (playheadTime / trackRatio)+"%";
   ui.timelineInfo.textContent = "TRACK LENGTH: "+Math.ceil(totalTime)+" | PLAYHEAD: "+Math.ceil(playheadTime);
 }
 
@@ -460,10 +461,11 @@ function toggleSetting(settingName, button) {
   if (settings.printConversation) {
     conversation.domElement.classList.remove("gone");
     conversation.clear();
-    updateOutput();
   } else {
     conversation.domElement.classList.add("gone");
   }
+
+  updateOutput();
 }
 
 function toggleGlobalSettings(button) {
