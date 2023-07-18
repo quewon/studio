@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
   <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js" integrity="sha512-csNcFYJniKjJxRWRV1R7fvnXrycHP6qDR21mgz1ZP55xY5d+aHLfo9/FcGDQLfn2IfngbAHd8LdfsagcCqgTcQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <meta charset="utf-8">
     <title>text studio</title>
     <link rel="stylesheet" href="css/inputsim.css">
@@ -14,6 +15,7 @@
         margin: auto;
         padding: .5rem;
         max-width: 50rem;
+        min-width: 30rem;
         font-family: serif;
       }
 
@@ -363,6 +365,10 @@
       <button onclick="togglePlaying()" name="play"></button>
       <button onclick="setPlayheadTime(totalTime)" name="toend" title="move playhead to the end of the track"></button>
       <div class="grow"></div>
+      <button onclick="createProjectFile()">export project</button>
+      <button onclick="createRecordingFile()">export recording</button>
+      <button onclick="this.nextElementSibling.click()">import file</button>
+      <input class="gone" type="file" name="avatar" accept="text/plain, .txtrec, .txtstudio" onchange="readFile(this)">
       <button onclick="toggleGlobalSettings(this)">settings</button>
     </div>
     <div id="timeline-info" class="noclick noselect"></div>
