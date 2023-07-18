@@ -450,8 +450,20 @@ function toggleSetting(settingName, button) {
   button.toggleAttribute("checked");
   settings[settingName] = button.getAttribute("checked") != null;
 
-  conversation.clear();
-  updateOutput();
+  if (settingName == "clearWithEnter" && !settings.clearWithEnter) {
+    initSettings({ printConversation: false });
+  }
+  if (settingName == "printConversation") {
+    initSettings({ clearWithEnter: true });
+  }
+
+  if (settings.printConversation) {
+    conversation.domElement.classList.remove("gone");
+    conversation.clear();
+    updateOutput();
+  } else {
+    conversation.domElement.classList.add("gone");
+  }
 }
 
 function toggleGlobalSettings(button) {

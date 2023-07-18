@@ -237,8 +237,10 @@ class Track {
       ui.trackInspector.delete.removeAttribute("disabled");
     }
 
-    conversation.clear();
-    updateOutput();
+    if (settings.printConversation) {
+      conversation.clear();
+      updateOutput();
+    }
   }
 }
 
@@ -351,7 +353,9 @@ class Clip {
     this.domElement.remove();
     this.track = null;
 
-    conversation.clear();
+    if (settings.printConversation) {
+      conversation.clear();
+    }
   }
 
   addToTrack(track) {
@@ -372,7 +376,9 @@ class Clip {
     track.updateTotalTime();
     track.refreshLog();
 
-    conversation.clear();
+    if (settings.printConversation) {
+      conversation.clear();
+    }
   }
 
   updateLogElement() {
@@ -531,15 +537,19 @@ class Clip {
 
     this.setStartTime(this.dragInitials.startTime + dx);
 
-    conversation.clear();
-    updateOutput();
+    if (settings.printConversation) {
+      conversation.clear();
+      updateOutput();
+    }
 
     this.previousMousePosition = mousePosition;
   }
 
   drop() {
-    conversation.clear();
-    updateOutput();
+    if (settings.printConversation) {
+      conversation.clear();
+      updateOutput();
+    }
 
     clipDragging = null;
     document.body.classList.remove("dragging");

@@ -1,6 +1,7 @@
 :root {
   --lightergray: rgb(230, 230, 230);
   --togglepink: rgba(255, 0, 0, .1);
+  --messageblue: #6392c2;
 }
 
 .flex {
@@ -103,21 +104,30 @@ button[name='toend']::before {
   display: flex;
   flex-direction: column;
   gap: .25rem;
-}
-.conversation:has(div) {
-  border: 1px solid gray;
-  border-radius: 5px;
-  padding: .5rem;
+  font-family: sans-serif;
+  font-size: .9rem;
+
+  border-bottom: 1px solid gray;
+  /* border-radius: 5px; */
+  padding-bottom: .5rem;
   margin-bottom: .5rem;
   max-height: 15rem;
   overflow-y: scroll;
 }
 
 .dialogue {
-  border-radius: 5px;
   max-width: 45%;
+  width: fit-content;
   word-break: break-word;
   animation: slide-up 200ms;
+
+  padding: .25rem;
+  padding-left: .5rem;
+  padding-right: .5rem;
+  border-radius: .5rem;
+  border-bottom-left-radius: 0;
+  background: lightgray;
+  box-sizing: border-box;
 }
 body.dragging .dialogue {
   animation: unset;
@@ -143,4 +153,10 @@ body.dragging .dialogue {
   text-align: right;
   align-self: flex-end;
   right: 0;
+  border-bottom-left-radius: .5rem;
+  border-bottom-right-radius: 0;
+}
+.c0.dialogue {
+  background: var(--messageblue);
+  color: white;
 }

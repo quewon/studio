@@ -9,6 +9,12 @@
       h1 {
         scale: 1 1.5;
       }
+      h1, h2 {
+        margin: 0;
+      }
+      header {
+        margin-bottom: 1rem;
+      }
 
       #timeline {
         position: relative;
@@ -283,12 +289,12 @@
   <body>
 
     <header class="noclick noselect">
-      <h2 style="margin-bottom: -1.5rem; margin-left: 1.5rem; font-style: italic;">quewon's</h2>
+      <h2 style="margin-bottom: 0; margin-left: 1.5rem; font-style: italic;">quewon's</h2>
       <h1>live text recording studio</h1>
     </header>
     <div id="timeline-controls" class="flex" class="noselect">
       <button onclick="createTrack()" name="track"></button>
-      <button onclick="currentTrack.toggleRecording(event)" name="record"></button>
+      <button onclick="currentTrack.toggleRecording(event)" name="record" title="start capturing keyboard input"></button>
       <button onclick="setPlayheadTime(0)" name="tostart" title="move playhead to the start of the track"></button>
       <button onclick="togglePlaying()" name="play"></button>
       <button onclick="setPlayheadTime(totalTime)" name="toend" title="move playhead to the end of the track"></button>
@@ -304,7 +310,7 @@
       <div id="timeline-ruler"></div>
       <div id="playhead"></div>
     </div>
-    <div class="flex column noclick">
+    <div class="flex column noclick" style="margin-bottom: .5rem;">
       <div id="global-settings" class="gone">
         <button name="startRecordOnInput">start recording on keydown</button>
         <button name="clearWithEnter">clear with enter</button>
@@ -355,10 +361,6 @@ GLOBAL TIMESTAMP: <input type="number" name="global" value="0"> ms
                   <button name="delete" class="serif">delete event</button></div>
         </div>
       </div>
-    </div>
-    <div class="noselect">
-      <br>
-      <i class="noclick noselect" style="color: gray">hit record to start capturing keyboard input.</i><br><br>
     </div>
 
   </body>
