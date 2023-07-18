@@ -6,78 +6,23 @@
     <title>text studio</title>
     <link rel="stylesheet" href="css/inputsim.css">
     <style media="screen">
-      :root {
-        --lightergray: rgb(230, 230, 230);
-        --togglepink: rgba(255, 0, 0, .1);
-      }
-
-      body {
-        margin: auto;
-        padding: .5rem;
-        max-width: 50rem;
-        min-width: 30rem;
-        font-family: serif;
-      }
-
       h1 {
         scale: 1 1.5;
       }
 
-      button {
-        font-size: inherit;
-        font-family: inherit;
-        cursor: pointer;
-        word-break: break-word;
-        white-space: pre;
-
-        border: 1px solid black;
-        border-radius: 3px;
-        background: white;
-
-        margin-bottom: .25rem;
-      }
-      button:not(:disabled):active {
-        background: var(--lightergray);
-      }
-      button[checked] {
-        background: var(--togglepink);
-      }
-      button:disabled {
-        border-color: var(--lightergray) !important;
-        color: var(--lightergray) !important;
-        cursor: auto;
-      }
-
-      .flex {
-        display: flex;
-        gap: .25rem;
-      }
-      .flex.column {
-        flex-direction: column;
-      }
-      .flex .grow {
-        flex-grow: 1;
-      }
-
-      .noselect {
-        -webkit-touch-callout: none; /* iOS Safari */
-          -webkit-user-select: none; /* Safari */
-           -khtml-user-select: none; /* Konqueror HTML */
-             -moz-user-select: none; /* Old versions of Firefox */
-              -ms-user-select: none; /* Internet Explorer/Edge */
-                  user-select: none; /* Non-prefixed version, currently
-                                        supported by Chrome, Edge, Opera and Firefox */
-      }
-
-      #timeline-info {
-        font-family: monospace;
-      }
       #timeline {
         position: relative;
         overflow: visible;
         display: flex;
         flex-direction: column;
         margin-bottom: .5rem;
+      }
+
+      button[name='play']::before {
+        content: "play"
+      }
+      body.playing button[name='play']::before {
+        content: "stop"
       }
 
       .track {
@@ -304,19 +249,6 @@
         content: "+ track"
       }
 
-      button[name='tostart']::before {
-        content: "<|"
-      }
-      button[name='toend']::before {
-        content: "|>"
-      }
-      button[name='play']::before {
-        content: "play"
-      }
-      body.playing button[name='play']::before {
-        content: "stop"
-      }
-
       body.playing button[name='play'], body.recording button[name='record'] {
         background-color: var(--togglepink)
       }
@@ -337,10 +269,6 @@
 
       body.resizing, body.resizing * {
         cursor: ew-resize;
-      }
-
-      .noclick {
-        pointer-events: none;
       }
 
       .serif {
@@ -437,7 +365,7 @@ GLOBAL TIMESTAMP: <input type="number" name="global" value="0"> ms
 
   <script type="text/javascript" src="js/hangul.min.js"></script>
   <script type="text/javascript" src="js/toolbox.js"></script>
-  <script type="text/javascript" src="js/recording.js"></script>
+  <script type="text/javascript" src="js/track.js"></script>
   <script type="text/javascript" src="js/inputsim.js"></script>
   <script type="text/javascript" src="js/engine.js"></script>
 </html>

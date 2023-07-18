@@ -1,3 +1,77 @@
+:root {
+  --lightergray: rgb(230, 230, 230);
+  --togglepink: rgba(255, 0, 0, .1);
+}
+
+.flex {
+  display: flex;
+  gap: .25rem;
+}
+.flex.column {
+  flex-direction: column;
+}
+.flex .grow {
+  flex-grow: 1;
+}
+
+body {
+  margin: auto;
+  padding: .5rem;
+  max-width: 50rem;
+  min-width: 30rem;
+  font-family: serif;
+}
+
+#timeline-info {
+  font-family: monospace;
+}
+
+button {
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  word-break: break-word;
+  white-space: pre;
+
+  border: 1px solid black;
+  border-radius: 3px;
+  background: white;
+
+  margin-bottom: .25rem;
+}
+button:not(:disabled):active {
+  background: var(--lightergray);
+}
+button[checked] {
+  background: var(--togglepink);
+}
+button:disabled {
+  border-color: var(--lightergray) !important;
+  color: var(--lightergray) !important;
+  cursor: auto;
+}
+
+button[name='tostart']::before {
+  content: "<|"
+}
+button[name='toend']::before {
+  content: "|>"
+}
+
+.noclick {
+  pointer-events: none;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+
 .output {
   font-family: monospace;
   white-space: pre-wrap;
@@ -37,17 +111,24 @@
 }
 
 .dialogue {
-  /* background: gray; */
-  /* padding: .25rem; */
   border-radius: 5px;
-  /* color: white; */
   max-width: 45%;
   word-break: break-word;
+  animation: slide-up 200ms;
 }
+
+@keyframes slide-up {
+  0% {
+    opacity: 0;
+    translate: 0 50%;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
 .dialogue.c0 {
   text-align: right;
   align-self: flex-end;
-}
-.dialogue.c1 {
-
 }

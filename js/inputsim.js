@@ -68,10 +68,12 @@ class Simulator {
         switch (e.key) {
           case "Enter":
             if (settings.clearWithEnter) {
-              copy.clearedText.push(copy.textContent);
-              copy.clearedText.push(timeStamp);
-              copy.textContent = "";
-              copy.selectionStart = copy.selectionEnd = 0;
+              if (copy.textContent != "") {
+                copy.clearedText.push(copy.textContent);
+                copy.clearedText.push(timeStamp);
+                copy.textContent = "";
+                copy.selectionStart = copy.selectionEnd = 0;
+              }
             } else {
               insert = "\r\n";
             }
@@ -281,11 +283,13 @@ function createClearedTextLog(clearedText) {
 class Conversation {
   constructor() {
     this.domElement = createElement("div", { parent: document.body, className: "conversation" });
+    this.printedTexts = [];
   }
 
   clear() {
-    while (this.domElement.lastElementChild) {
-      this.domElement.lastElementChild.remove();
+    for (let i=this.printedTexts.length-1; i>=0; i--) {
+      printed.domElement.remove();
+      this.printedTexts.splice(i, 1);
     }
   }
 
@@ -358,12 +362,26 @@ class Conversation {
   }
 
   print(states) {
-    this.clear();
-
     var texts = this.getBakedFrame(states);
 
-    for (let text of texts) {
-      createElement("div", { parent: this.domElement, className: text.className, textContent: text.textContent });
+    for (let i=0; i<texts.length; i++) {
+      const printed = this.printedTexts[i];
+      const text = texts[i];
+      if (printed && printed.textContent == text.textContent && printed.timeStamp == text.timeStamp) {
+        continue;
+      } else {
+        text.domElement = createElement("div", { parent: this.domElement, className: text.className, textContent: text.textContent });
+        this.printedTexts.push(text);
+      }
+    }
+
+    for (let i=this.printedTexts.length-1; i>=0; i--) {
+      const printed = this.printedTexts[i];
+      const text = texts[i];
+      if (!text) {
+        printed.domElement.remove();
+        this.printedTexts.splice(i, 1);
+      }
     }
   }
 }

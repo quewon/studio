@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="css/inputsim.css">
+  </head>
+  <body>
+
+    <div id="timeline-controls" class="flex" class="noselect">
+      <button onclick="setPlayheadTime(0)" name="tostart" title="move playhead to the start of the track"></button>
+      <button id="play" onclick="togglePlaying()">play</button>
+      <button onclick="setPlayheadTime(totalTime)" name="toend" title="move playhead to the end of the track"></button>
+    </div>
+    <div id="timeline-info" class="noclick noselect"></div>
+    <div id="timeline">
+      <div id="playhead"></div>
+    </div>
+
+  </body>
+
+  <script type="text/javascript" src="js/hangul.min.js"></script>
+  <script type="text/javascript" src="js/inputsim.js"></script>
+  <script type="text/javascript" src="js/recording.js"></script>
+  <script type="text/javascript">
+    importBaked(null);
+  </script>
+</html>
