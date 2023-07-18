@@ -145,7 +145,6 @@ class Track {
       currentClip.remove();
       this.refreshLog();
     } else {
-      currentClip.updateTimelineElement();
       this.orderInputEvents();
       this.updateTotalTime();
       currentClip.updateLogElement();
@@ -711,6 +710,7 @@ class Clip {
     this.trimmedTime = this.totalTime - this.trimStart;
 
     this.track.orderInputEvents();
+    this.updateTimelineElement();
   }
 
   remove() {

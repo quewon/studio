@@ -18,6 +18,7 @@ class SimulationState {
     this.selectionDirection = state.selectionDirection || 0;
     this.shiftKey = state.shiftKey || false;
     this.metaKey = state.metaKey || false;
+    this.capsLock = state.capsLock || false;
 
     this.clearedText = [];
     if (state.clearedText) {
@@ -87,6 +88,10 @@ class Simulator {
             copy.metaKey = true;
             break;
 
+          case "CapsLock":
+            copy.capsLock = true;
+            break;
+
           case "Alt":
           case "Control":
           case "Escape":
@@ -140,9 +145,7 @@ class Simulator {
             break;
 
           default:
-            if (state.shiftKey) {
-              insert = e.key.toUpperCase();
-            } else if (state.metaKey) {
+            if (copy.metaKey) {
               switch (e.key) {
                 case "a":
                   copy.selectionStart = 0;
@@ -151,7 +154,7 @@ class Simulator {
                   break;
               }
             } else {
-              insert = e.key;
+              insert = copy.shiftKey || copy.capsLock ? e.key.toUpperCase() : e.key.toLowerCase();
             }
             break;
         }
@@ -169,6 +172,10 @@ class Simulator {
 
         case "Meta":
           copy.metaKey = false;
+          break;
+
+        case "CapsLock":
+          copy.capsLock = false;
           break;
       }
     }
