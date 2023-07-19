@@ -105,14 +105,14 @@ button[name='toend']::before {
   color: black;
 }
 
-.output.monospace {
+body.monospace .output {
   font-family: monospace;
   font-size: inherit;
 }
-.output.monospace .caret:empty {
+body.monospace .output .caret:empty {
   animation: unset;
 }
-.output.monospace .caret:empty::before {
+body.monospace .output .caret:empty::before {
   content: "_";
   width: fit-content;
   overflow: hidden;
@@ -140,7 +140,7 @@ button[name='toend']::before {
   overflow-y: scroll;
 }
 
-.conversation.monospace {
+body.monospace .conversation {
   font-family: monospace;
   font-size: inherit;
   gap: 0;
@@ -165,7 +165,7 @@ body.dragging .dialogue {
   animation: unset;
 }
 
-.conversation.monospace .dialogue {
+body.monospace .dialogue {
   max-width: 100%;
   width: 100%;
   animation: unset;
@@ -181,7 +181,7 @@ body.dragging .dialogue {
   color: gray;
 }
 
-.conversation.monospace .typing {
+body.monospace .typing {
   display: none;
 }
 

@@ -93,15 +93,9 @@ function toggleSetting(settingName, button) {
 
     case "monospacedOutput":
       if (settings.monospacedOutput) {
-        for (let track of allTracks) {
-          track.simulator.domElement.classList.add("monospace");
-        }
-        conversation.domElement.classList.add("monospace");
+        document.body.classList.add("monospace");
       } else {
-        for (let track of allTracks) {
-          track.simulator.domElement.classList.remove("monospace");
-        }
-        conversation.domElement.classList.remove("monospace");
+        document.body.classList.remove("monospace");
       }
       break;
   }

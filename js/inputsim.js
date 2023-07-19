@@ -42,8 +42,6 @@ class Simulator {
     this.domElement = createElement("div", { parent: document.body, className: "output" });
     this.caretElement = createElement("div", { parent: this.domElement, className: "caret" });
     this.lastPrintedState = null;
-
-    if (settings.monospacedOutput) this.domElement.classList.add("monospace");
   }
 
   simulateEvent(state, inputEvent) {
@@ -306,8 +304,6 @@ class Conversation {
     this.domElement = createElement("div", { parent: document.body, className: "conversation" });
     this.printedTexts = [];
     this.typingElements = [];
-
-    if (settings.monospacedOutput) this.domElement.classList.add("monospace");
   }
 
   clear() {
