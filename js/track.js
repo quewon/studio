@@ -446,7 +446,7 @@ class Clip {
   select() {
     if (joiningClips) return;
 
-    if (clipSelected) {
+    if (clipSelected && clipSelected != this) {
       clipSelected.deselect();
     }
 
@@ -545,11 +545,6 @@ class Clip {
   }
 
   drop() {
-    if (settings.printConversation) {
-      conversation.clear();
-      updateOutput();
-    }
-
     clipDragging = null;
     document.body.classList.remove("dragging");
     this.domElement.classList.remove("dragging");

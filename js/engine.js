@@ -39,6 +39,83 @@ const ui = {
   }
 };
 
+// settings
+
+var settings = {};
+
+initSettings({
+  minClipWidth: 10,
+  startRecordOnInput: false,
+  clearWithEnter: true,
+  assembleHangul: true,
+  useBakedStates: true,
+  printConversation: true,
+  monospacedOutput: false
+});
+
+function initSettings(settingData) {
+  for (let setting in settingData) {
+    var button = document.querySelector("#global-settings button[name='"+setting+"']");
+    if (button) {
+      if (settingData[setting]) {
+        button.setAttribute("checked", true);
+      } else {
+        button.removeAttribute("checked");
+      }
+      if (button.onclick == null) {
+        button.onclick = function() {
+          toggleSetting(setting, this);
+        };
+      }
+    }
+    settings[setting] = settingData[setting];
+  }
+}
+
+function toggleSetting(settingName, button) {
+  button.toggleAttribute("checked");
+  settings[settingName] = button.getAttribute("checked") != null;
+
+  switch (settingName) {
+    case "clearWithEnter":
+      if (!settings.clearWithEnter) initSettings({ printConversation: false });
+      break;
+
+    case "printConversation":
+      if (!settings.clearWithEnter) initSettings({ clearWithEnter: true });
+      if (settings.printConversation) {
+        conversation.domElement.classList.remove("gone");
+        conversation.clear();
+      } else {
+        conversation.domElement.classList.add("gone");
+      }
+      break;
+
+    case "monospacedOutput":
+      if (settings.monospacedOutput) {
+        for (let track of allTracks) {
+          track.simulator.domElement.classList.add("monospace");
+        }
+        conversation.domElement.classList.add("monospace");
+      } else {
+        for (let track of allTracks) {
+          track.simulator.domElement.classList.remove("monospace");
+        }
+        conversation.domElement.classList.remove("monospace");
+      }
+      break;
+  }
+
+  updateOutput();
+}
+
+function toggleGlobalSettings(button) {
+  button.toggleAttribute("checked");
+  ui.globalSettings.classList.toggle("gone");
+}
+
+//
+
 var trackRatio = 1;
 var totalTime = 0;
 var playheadTime = 0;
@@ -414,64 +491,6 @@ ui.trackInspector.lock.onclick = function() {
 ui.trackInspector.delete.onclick = function() {
   currentTrack.remove();
 };
-
-// settings
-
-var settings = {};
-
-initSettings({
-  minClipWidth: 10,
-  startRecordOnInput: false,
-  clearWithEnter: true,
-  assembleHangul: true,
-  useBakedStates: true,
-  printConversation: true
-});
-
-function initSettings(settingData) {
-  for (let setting in settingData) {
-    var button = document.querySelector("#global-settings button[name='"+setting+"']");
-    if (button) {
-      if (settingData[setting]) {
-        button.setAttribute("checked", true);
-      } else {
-        button.removeAttribute("checked");
-      }
-      if (button.onclick == null) {
-        button.onclick = function() {
-          toggleSetting(setting, this);
-        };
-      }
-    }
-    settings[setting] = settingData[setting];
-  }
-}
-
-function toggleSetting(settingName, button) {
-  button.toggleAttribute("checked");
-  settings[settingName] = button.getAttribute("checked") != null;
-
-  if (settingName == "clearWithEnter" && !settings.clearWithEnter) {
-    initSettings({ printConversation: false });
-  }
-  if (settingName == "printConversation") {
-    initSettings({ clearWithEnter: true });
-  }
-
-  if (settings.printConversation) {
-    conversation.domElement.classList.remove("gone");
-    conversation.clear();
-  } else {
-    conversation.domElement.classList.add("gone");
-  }
-
-  updateOutput();
-}
-
-function toggleGlobalSettings(button) {
-  button.toggleAttribute("checked");
-  ui.globalSettings.classList.toggle("gone");
-}
 
 // safari drag cursor fix ??
 

@@ -74,7 +74,8 @@ button[name='toend']::before {
 }
 
 .output {
-  font-family: monospace;
+  font-family: sans-serif;
+  font-size: .9rem;
   white-space: pre-wrap;
   word-break: break-word;
   pointer-events: none;
@@ -89,14 +90,38 @@ button[name='toend']::before {
 }
 .output .caret {
   display: inline;
-  min-width: 1ch;
   min-height: 1em;
   background: black;
   color: white;
 }
-.caret:empty::before {
-  content: "_";
+.output .caret:empty {
+  animation: blink 1s infinite steps(1, end);
+}
+.output .caret:empty::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: inherit;
   color: black;
+}
+
+.output.monospace {
+  font-family: monospace;
+  font-size: inherit;
+}
+.output.monospace .caret:empty {
+  animation: unset;
+}
+.output.monospace .caret:empty::before {
+  content: "_";
+  width: fit-content;
+  overflow: hidden;
+}
+
+@keyframes blink {
+  0% { opacity: 1 }
+  50% { opacity: 0}
+  100% { opacity: 0 }
 }
 
 .conversation {
@@ -115,11 +140,18 @@ button[name='toend']::before {
   overflow-y: scroll;
 }
 
+.conversation.monospace {
+  font-family: monospace;
+  font-size: inherit;
+  gap: 0;
+}
+
 .dialogue {
   max-width: 45%;
   width: fit-content;
   word-break: break-word;
   animation: slide-up 200ms;
+  white-space: pre-wrap;
 
   padding: .25rem;
   padding-left: .5rem;
@@ -133,9 +165,24 @@ body.dragging .dialogue {
   animation: unset;
 }
 
+.conversation.monospace .dialogue {
+  max-width: 100%;
+  width: 100%;
+  animation: unset;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .typing {
   font-style: italic;
   color: gray;
+}
+
+.conversation.monospace .typing {
+  display: none;
 }
 
 @keyframes slide-up {

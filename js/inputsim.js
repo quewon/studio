@@ -42,6 +42,8 @@ class Simulator {
     this.domElement = createElement("div", { parent: document.body, className: "output" });
     this.caretElement = createElement("div", { parent: this.domElement, className: "caret" });
     this.lastPrintedState = null;
+
+    if (settings.monospacedOutput) this.domElement.classList.add("monospace");
   }
 
   simulateEvent(state, inputEvent) {
@@ -217,6 +219,16 @@ class Simulator {
   }
 
   printState(state) {
+    if (
+      this.lastPrintedState &&
+      this.lastPrintedState.textContent == state.textContent &&
+      this.lastPrintedState.selectionStart == state.selectionStart &&
+      this.lastPrintedState.selectionEnd == state.selectionEnd
+    ) {
+      this.lastPrintedState = state;
+      return;
+    }
+
     this.lastPrintedState = state;
 
     if (!state) {
@@ -229,8 +241,10 @@ class Simulator {
     var start = state.selectionStart;
     var end = state.selectionEnd;
 
-    if (start == end && end <= state.textContent.length - 1) {
-      end++;
+    if (this.domElement.classList.contains("monospace")) {
+      if (start == end && end <= state.textContent.length - 1) {
+        end++;
+      }
     }
 
     var range = document.createRange();
@@ -292,6 +306,8 @@ class Conversation {
     this.domElement = createElement("div", { parent: document.body, className: "conversation" });
     this.printedTexts = [];
     this.typingElements = [];
+
+    if (settings.monospacedOutput) this.domElement.classList.add("monospace");
   }
 
   clear() {
