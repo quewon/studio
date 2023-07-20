@@ -34,6 +34,7 @@ class Track {
   lock() {
     this.locked = true;
     ui.trackInspector.lock.setAttribute("checked", true);
+    ui.trackInspector.lock.textContent = "unlock";
     document.body.classList.add("locked");
     this.domElement.classList.add("locked");
     ui.recordButton.setAttribute("disabled", true);
@@ -44,6 +45,7 @@ class Track {
   unlock() {
     this.locked = false;
     ui.trackInspector.lock.removeAttribute("checked");
+    ui.trackInspector.lock.textContent = "lock";
     document.body.classList.remove("locked");
     this.domElement.classList.remove("locked");
     ui.recordButton.removeAttribute("disabled");
@@ -136,6 +138,8 @@ class Track {
 
     document.body.classList.add("recording");
     this.simulator.domElement.classList.add("recording");
+    ui.recordButton.textContent = "stop recording";
+    ui.recordButton.setAttribute("checked", true);
   }
 
   stopRecording() {
@@ -155,6 +159,8 @@ class Track {
 
     document.body.classList.remove("recording");
     this.simulator.domElement.classList.remove("recording");
+    ui.recordButton.textContent = "record";
+    ui.recordButton.removeAttribute("checked");
   }
 
   updateTotalTime() {
@@ -765,6 +771,7 @@ class RecordedEvent {
       ui.eventInspector.local.value = this.localTimeStamp;
     }
 
+    if (settings.printConversation) conversation.clear();
     updateOutput();
   }
 
@@ -835,6 +842,8 @@ class RecordedEvent {
   setEventType(type) {
     this.strippedEvent.type = type;
     this.updateLogElement();
+    this.clip.track.orderInputEvents();
+    if (settings.printConversation) conversation.clear();
     updateOutput();
 
     if (this == eventBeingEdited) {
@@ -856,6 +865,7 @@ class RecordedEvent {
 
     this.clip.track.orderInputEvents();
 
+    if (settings.printConversation) conversation.clear();
     updateOutput();
   }
 }

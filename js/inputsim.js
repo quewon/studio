@@ -95,8 +95,32 @@ class Simulator {
           case "Alt":
           case "Control":
           case "Escape":
+            break;
+
           case "ArrowUp":
+            if (state.shiftKey) {
+              if (copy.selectionStart != 0) {
+                copy.selectionStart = 0;
+                if (start != end && state.selectionDirection == 1) {
+                  copy.selectionEnd = start;
+                }
+              }
+            } else {
+              copy.selectionStart = copy.selectionEnd = 0;
+            }
+            break;
+
           case "ArrowDown":
+            if (state.shiftKey) {
+              if (copy.selectionEnd != text.length) {
+                copy.selectionEnd = text.length;
+                if (start != end && state.selectionDirection == -1) {
+                  copy.selectionStart = end;
+                }
+              }
+            } else {
+              copy.selectionStart = copy.selectionEnd = text.length;
+            }
             break;
 
           case "ArrowLeft":

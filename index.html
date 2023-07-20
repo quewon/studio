@@ -24,13 +24,6 @@
         margin-bottom: .5rem;
       }
 
-      button[name='play']::before {
-        content: "play"
-      }
-      body.playing button[name='play']::before {
-        content: "stop"
-      }
-
       .track {
         position: relative;
         width: 100%;
@@ -95,28 +88,6 @@
       }
       .resize-handle:first-child {
         left: 0;
-      }
-
-      #playhead {
-        position: absolute;
-        height: 100%;
-        border-left: 1px solid;
-        border-right: 1px solid;
-        border-color: black;
-        translate: -50% 0;
-        pointer-events: none;
-        z-index: 10;
-      }
-      #playhead::before {
-        content: "";
-        display: block;
-        position: absolute;
-        top: 0;
-        height: .75rem;
-        width: .75rem;
-        translate: -50% 0;
-        background: black;
-        border-radius: 50%;
       }
 
       body.recording #playhead {
@@ -199,24 +170,11 @@
         margin-bottom: .5rem;
       }
 
-      #event-inspector [name='listen']::before {
-        content: "listen";
-      }
-      #inspector.listening #event-inspector [name='listen']::before {
-        content: "stop listening";
-      }
       #event-inspector [name='listening'] {
         display: none;
       }
       #inspector.listening #event-inspector [name='listening'] {
         display: inline;
-      }
-
-      #track-inspector [name='lock']::after {
-        content: "lock track"
-      }
-      #track-inspector [name='lock'][checked]::after {
-        content: "unlock track"
       }
 
       input {
@@ -242,21 +200,6 @@
       }
       body.recording .visualizer > div {
         background: black;
-      }
-
-      button[name='record']::before {
-        content: "record"
-      }
-      body.recording button[name='record']::before {
-        content: "stop recording"
-      }
-
-      button[name='track']::before {
-        content: "+ track"
-      }
-
-      body.playing button[name='play'], body.recording button[name='record'] {
-        background-color: var(--togglepink)
       }
 
       .output.recording {
@@ -293,15 +236,15 @@
       <h1>live text recording studio</h1>
     </header>
     <div id="timeline-controls" class="flex" class="noselect">
-      <button onclick="createTrack()" name="track"></button>
-      <button onclick="currentTrack.toggleRecording(event)" name="record" title="start capturing keyboard input"></button>
+      <button onclick="createTrack()">+ track</button>
+      <button onclick="currentTrack.toggleRecording(event)" id="record" title="start capturing keyboard input">record</button>
       <button onclick="setPlayheadTime(0)" name="tostart" title="move playhead to the start of the track"></button>
-      <button onclick="togglePlaying()" name="play"></button>
+      <button onclick="togglePlaying()" id="play">play</button>
       <button onclick="setPlayheadTime(totalTime)" name="toend" title="move playhead to the end of the track"></button>
       <div class="grow"></div>
       <button onclick="createProjectFile()">export project</button>
       <button onclick="createRecordingFile()">export recording</button>
-      <button onclick="this.nextElementSibling.click()">import file</button>
+      <button onclick="this.nextElementSibling.click()">import</button>
       <input class="gone" type="file" name="avatar" accept="text/plain, .txtrec, .txtstudio" onchange="readFile(this)">
       <button onclick="toggleGlobalSettings(this)">settings</button>
     </div>
@@ -328,7 +271,7 @@
         <div id="inspector" class="flex column">
         <div id="track-inspector">TRACK INSPECTOR
 
-<button name="lock" class="serif"></button>
+<button name="lock" class="serif">lock</button>
 
 PLAYHEAD: <input type="number" name="playhead" value="0"> ms
 (numbers here are more accurate.)
@@ -355,7 +298,7 @@ TRIM LENGTH: <input type="number" name="trim-length" value="0"> ms
             TYPE: <button name="keydown" checked>keydown</button> <button name="keyup">keyup</button>
 
             CODE: <span name="code">a</span>
-             KEY: <span name="key">a</span> <button name="listen" class="serif"></button> <span name="listening"><i>listening...</i></span>
+             KEY: <span name="key">a</span> <button name="listen" class="serif">listen</button> <span name="listening"><i>listening...</i></span>
 
  LOCAL TIMESTAMP: <input type="number" name="local" value="0"> ms
 GLOBAL TIMESTAMP: <input type="number" name="global" value="0"> ms

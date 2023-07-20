@@ -22,6 +22,26 @@ function createTemplateCopy(template, props) {
   return div;
 }
 
+function getFormattedTime(milliseconds) {
+  var seconds = milliseconds / 1000;
+  var minutes = seconds / 60;
+
+  // var ms = Math.floor(milliseconds % 1000 / 100);
+  var sec = Math.floor(seconds % 60);
+  var min = Math.floor(minutes % 60);
+  var hour = Math.floor(minutes / 60);
+
+  var time = "";
+  if (hour >= 1) time += hour+":";
+  time += min < 10 ? "0"+min : min;
+  time += ":";
+  time += sec < 10 ? "0"+sec : sec;
+  // time += ".";
+  // time += ms;
+
+  return time;
+}
+
 function lerp(a, b, t) {
   return a * (1-t) + b * t;
 }

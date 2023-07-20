@@ -27,6 +27,28 @@ body {
   font-family: monospace;
 }
 
+#playhead {
+  position: absolute;
+  height: 100%;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  border-color: black;
+  translate: -50% 0;
+  pointer-events: none;
+  z-index: 10;
+}
+#playhead::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  height: .75rem;
+  width: .75rem;
+  translate: -50% 0;
+  background: black;
+  border-radius: 50%;
+}
+
 button {
   font-size: inherit;
   font-family: inherit;
@@ -94,7 +116,10 @@ button[name='toend']::before {
   background: black;
   color: white;
 }
-.output .caret:empty {
+body.recording .output .caret:empty {
+  animation: blink 1s infinite steps(1, end);
+}
+body.playing .output .caret:empty {
   animation: blink 1s infinite steps(1, end);
 }
 .output .caret:empty::before {

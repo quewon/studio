@@ -1,14 +1,15 @@
 const ui = {
   globalSettings: document.getElementById("global-settings"),
 
+  playButton: document.getElementById("play"),
+  recordButton: document.getElementById("record"),
+
   timeline: document.getElementById("timeline"),
   timelineInfo: document.getElementById("timeline-info"),
   timelineRuler: document.getElementById("timeline-ruler"),
   playhead: document.getElementById("playhead"),
   componentLog: document.getElementById("component-log"),
   inspector: document.getElementById("inspector"),
-
-  recordButton: document.querySelector("[name='record']"),
 
   eventInspector: {
     keydown: document.querySelector("#event-inspector [name='keydown']"),
@@ -245,6 +246,12 @@ function updateOutput() {
   }
 }
 
+function updateTimelineInfo() {
+  const fTT = getFormattedTime(totalTime);
+  const fPT = getFormattedTime(playheadTime);
+  ui.timelineInfo.textContent = "TRACK LENGTH: "+Math.ceil(totalTime)+" | PLAYHEAD: "+Math.ceil(playheadTime)+" | "+fPT+" / "+fTT;
+}
+
 function setPlayheadTime(value) {
   const prevValue = playheadTime;
   playheadTime = value;
@@ -260,19 +267,23 @@ function setPlayheadTime(value) {
     ui.playhead.style.left = (playheadTime / trackRatio)+"%";
   }
 
-  ui.timelineInfo.textContent = "TRACK LENGTH: "+Math.ceil(totalTime)+" | PLAYHEAD: "+Math.ceil(playheadTime);
+  updateTimelineInfo();
 }
 
 function setTotalTime(value) {
   if (totalTime != value) {
     totalTime = value;
     trackRatio = totalTime / 100;
-    ui.timelineInfo.textContent = "TRACK LENGTH: "+Math.ceil(totalTime)+" | PLAYHEAD: "+Math.ceil(playheadTime);
+    updateTimelineInfo();
 
     if (trackRatio == 0) {
       ui.timelineRuler.style.backgroundSize = "100% 100%";
     } else {
-      ui.timelineRuler.style.backgroundSize = (1000 / trackRatio)+"% 100%";
+      var ratio = 1000 / trackRatio;
+      while (ratio < 1) {
+        ratio *= 10;
+      }
+      ui.timelineRuler.style.backgroundSize = ratio+"% 100%";
     }
 
     for (let track of allTracks) {
@@ -301,11 +312,15 @@ function togglePlaying() {
 function startPlaying() {
   playing = true;
   document.body.classList.add("playing");
+  ui.playButton.textContent = "stop";
+  ui.playButton.setAttribute("checked", true);
 }
 
 function stopPlaying() {
   playing = false;
   document.body.classList.remove("playing");
+  ui.playButton.textContent = "play";
+  ui.playButton.removeAttribute("checked");
 }
 
 // moving the playhead
@@ -354,6 +369,7 @@ var eventBeingEdited;
 function stopListening() {
   listeningForEditor = false;
   ui.inspector.classList.remove("listening");
+  ui.eventInspector.listen.textContent = "listen";
 }
 
 ui.eventInspector.listen.onclick = function() {
@@ -362,6 +378,7 @@ ui.eventInspector.listen.onclick = function() {
   } else {
     listeningForEditor = true;
     ui.inspector.classList.add("listening");
+    ui.eventInspector.listen.textContent = "stop listening";
   }
 };
 
