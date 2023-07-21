@@ -24,11 +24,38 @@ class Track {
 
     this.selected = false;
     this.locked = false;
+    this.muted = false;
 
     this.index = allTracks.length;
 
     allTracks.push(this);
     this.select();
+  }
+
+  mute() {
+    this.muted = true;
+    this.domElement.classList.add("mute");
+    ui.trackInspector.mute.setAttribute("checked", true);
+    ui.trackInspector.mute.textContent = "unmute";
+    this.simulator.domElement.remove();
+
+    if (settings.printConversation) conversation.clear();
+    updateOutput();
+  }
+
+  unmute() {
+    this.muted = false;
+    this.domElement.classList.remove("mute");
+    ui.trackInspector.mute.removeAttribute("checked");
+    ui.trackInspector.mute.textContent = "mute";
+
+    for (let track of allTracks) {
+      if (track.muted) continue;
+      document.body.appendChild(track.simulator.domElement);
+    }
+
+    if (settings.printConversation) conversation.clear();
+    updateOutput();
   }
 
   lock() {
@@ -84,6 +111,14 @@ class Track {
       this.lock();
     } else {
       this.unlock();
+    }
+
+    if (this.muted) {
+      ui.trackInspector.mute.setAttribute("checked", true);
+      ui.trackInspector.mute.textContent = "unmute";
+    } else {
+      ui.trackInspector.mute.removeAttribute("checked");
+      ui.trackInspector.mute.textContent = "mute";
     }
   }
 

@@ -36,6 +36,7 @@ const ui = {
   trackInspector: {
     playhead: document.querySelector("#track-inspector [name='playhead']"),
     lock: document.querySelector("#track-inspector [name='lock']"),
+    mute: document.querySelector("#track-inspector [name='mute']"),
     delete: document.querySelector("#track-inspector [name='delete']")
   }
 };
@@ -234,13 +235,13 @@ function tick() {
 
 function updateOutput() {
   for (let track of allTracks) {
-    track.simulator.printStateAtTimestamp(track.inputEvents, playheadTime);
+    if (!track.muted) track.simulator.printStateAtTimestamp(track.inputEvents, playheadTime);
   }
 
   if (settings.printConversation) {
     var states = [];
     for (let track of allTracks) {
-      states.push(track.simulator.lastPrintedState);
+      if (!track.muted) states.push(track.simulator.lastPrintedState);
     }
     conversation.print(states);
   }
@@ -499,6 +500,16 @@ ui.trackInspector.lock.onclick = function() {
   }
 };
 
+ui.trackInspector.mute.onclick = function() {
+  this.toggleAttribute("checked");
+
+  if (this.getAttribute("checked") != null) {
+    currentTrack.mute();
+  } else {
+    currentTrack.unmute();
+  }
+};
+
 ui.trackInspector.delete.onclick = function() {
   currentTrack.remove();
 };
@@ -521,7 +532,8 @@ function exportProject() {
       clips: [],
       totalTime: track.totalTime,
       selected: track.selected,
-      locked: track.locked
+      locked: track.locked,
+      muted: track.muted
     };
 
     for (let clip of track.clips) {
@@ -559,6 +571,7 @@ function exportBaked() {
   }
 
   for (let track of allTracks) {
+    if (track.muted) continue;
     const bakedEvents = track.simulator.getBakedEvents(track.inputEvents);
     data.TRACKS.push(bakedEvents);
   }
@@ -606,6 +619,7 @@ function importProject(data) {
         }
         if (t.selected) track.select();
         if (t.locked) track.lock();
+        if (t.muted) track.mute();
       }
     }
 
@@ -615,7 +629,7 @@ function importProject(data) {
 
     // setPlayheadTime(totalTime);
 
-    conversation.clear();
+    if (settings.printConversation) conversation.clear();
     updateOutput();
   } catch {
     alert("file could not be fully loaded...");

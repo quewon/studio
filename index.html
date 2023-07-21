@@ -51,6 +51,10 @@
         background: gray;
       }
 
+      .track.mute {
+        opacity: .3;
+      }
+
       /* clip */
       .track .clip {
         position: absolute;
@@ -271,7 +275,7 @@
         <div id="inspector" class="flex column">
         <div id="track-inspector">TRACK INSPECTOR
 
-<button name="lock" class="serif">lock</button>
+<button name="mute" class="serif">mute</button> <button name="lock" class="serif">lock</button>
 
 PLAYHEAD: <input type="number" name="playhead" value="0"> ms
 (numbers here are more accurate.)
