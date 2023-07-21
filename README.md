@@ -51,7 +51,7 @@ The **conversation**, when turned on, is a log of all cleared text. Within the s
 
 ## Keyboard shortcuts
 
-- **Delete**: You can delete the currently selected event/clip/track by hitting delete. The program will prompt you about whether or not you're sure. (There's also a delete button at the bottom of every inspector menu. However, those buttons won't ask you for a confirmation.) Make sure to only delete something if you're sure, because you cannot undo it.
+- **Backspace**: You can delete the currently selected event/clip/track by hitting backspace. The program will prompt you about whether or not you're sure. (There's also a delete button at the bottom of every inspector menu. However, those buttons won't ask you for a confirmation.) Make sure to only delete something if you're sure, because you cannot undo it.
 
 ## Exporting
 
