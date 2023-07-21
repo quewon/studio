@@ -2,7 +2,7 @@
 
 (⚠️ This README is a work in progress! ⚠️)
 
-This live text recording studio ('text studio' for short) is a tool for creating realtime text input recordings and conversations. It's inspired by online typing tests where you can playback a recording of your typing, and text-only conversations I've had with my friends!
+This live text recording studio ('text studio' for short) is a tool for creating realtime text input recordings and conversations. It's inspired by online typing tests and text message conversations I've had with my friends over the years.
 
 The text studio interface is similar to that of an audio or video editing program. It's mainly composed of three sections: the **timeline**, for visualizing and editing clips; an **inspector**, for more detailed operations; an **output**.
 
