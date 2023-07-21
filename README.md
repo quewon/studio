@@ -38,12 +38,12 @@ Each track has an **input simulator** that runs in the background and determines
 
 #### Implemented keyboard functions
 
-- Enter (creates newline)
-- Shift (capitalizes keys while pressed, affects text selection)
-- CapsLock (inverts Shift key capitalization)
-- Meta, Control (stops key input)
-  - cmd+A / ctrl+A (selects the entire text)
-- Arrow keys (affects caret position and text selection)
+- **Enter**: Creates newline
+- **Shift**: Capitalizes keys while pressed, affects text selection
+- **CapsLock**: Inverts Shift key capitalization
+- **Meta**, **Control**: Stops key input
+  - **CMD+A** / **CTRL+A**: Selects the entire text
+- **Arrow keys**: Affects caret position and text selection
 
 ### Conversation
 
@@ -51,7 +51,7 @@ The **conversation**, when turned on, is a log of all cleared text. Within the s
 
 ## Keyboard shortcuts
 
-- **Delete** : You can delete the currently selected event/clip/track by hitting delete. The program will prompt you about whether or not you're sure. (There's also a delete button at the bottom of every inspector menu. However, those buttons won't ask you for a confirmation.) Make sure to only delete something if you're sure, because you cannot undo it.
+- **Delete**: You can delete the currently selected event/clip/track by hitting delete. The program will prompt you about whether or not you're sure. (There's also a delete button at the bottom of every inspector menu. However, those buttons won't ask you for a confirmation.) Make sure to only delete something if you're sure, because you cannot undo it.
 
 ## Exporting
 
