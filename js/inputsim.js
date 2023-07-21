@@ -85,6 +85,7 @@ class Simulator {
             break;
 
           case "Meta":
+          case "Control":
             copy.metaKey = true;
             break;
 
@@ -93,7 +94,6 @@ class Simulator {
             break;
 
           case "Alt":
-          case "Control":
           case "Escape":
             break;
 
@@ -178,7 +178,11 @@ class Simulator {
                   break;
               }
             } else {
-              insert = copy.shiftKey || copy.capsLock ? e.key.toUpperCase() : e.key.toLowerCase();
+              if (copy.capsLock) {
+                insert = copy.shiftKey ? e.key.toLowerCase() : e.key.toUpperCase();
+              } else {
+                insert = copy.shiftKey ? e.key.toUpperCase() : e.key.toLowerCase();
+              }
             }
             break;
         }
@@ -195,6 +199,7 @@ class Simulator {
           break;
 
         case "Meta":
+        case "Control":
           copy.metaKey = false;
           break;
 
