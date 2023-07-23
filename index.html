@@ -13,7 +13,7 @@
         margin: 0;
       }
       header {
-        margin-bottom: 1rem;
+        margin-bottom: .5rem;
       }
 
       #timeline {
@@ -21,7 +21,6 @@
         overflow: visible;
         display: flex;
         flex-direction: column;
-        margin-bottom: .5rem;
       }
 
       .track {
@@ -248,7 +247,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="flex column">
 
     <div style="position: absolute; top: .5rem; right: .5rem;">
       <a href="https://github.com/quewon/studio#live-text-recording-studio" target="_blank">guide</a>
@@ -270,14 +269,14 @@
       <button onclick="createRecordingFile()">export recording</button>
       <button onclick="this.nextElementSibling.click()">import</button>
       <input class="gone" type="file" name="avatar" accept="text/plain, .txtrec, .txtstudio" onchange="readFile(this)">
-      <button onclick="toggleGlobalSettings(this)">settings</button>
+      <button onclick="toggleGone(ui.globalSettings, this)">settings</button>
     </div>
     <div id="timeline-info" class="noclick noselect"></div>
     <div id="timeline">
       <div id="timeline-ruler"></div>
       <div id="playhead"></div>
     </div>
-    <div class="flex column noclick" style="margin-bottom: .5rem;">
+    <div class="flex column noclick">
       <div id="global-settings" class="gone">
         <button name="startRecordOnInput">start recording on keydown</button>
         <button name="printConversation">print conversation</button>

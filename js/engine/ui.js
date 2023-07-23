@@ -45,3 +45,12 @@ const ui = {
 
 // safari drag cursor fix ??
 document.onselectstart = function() { return false; }
+
+function toggleGone(element, button) {
+  button.toggleAttribute("checked");
+  if (button.getAttribute("checked") != null) {
+    element.classList.remove("gone");
+  } else {
+    element.classList.add("gone");
+  }
+}
