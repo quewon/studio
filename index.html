@@ -120,16 +120,17 @@
         background: white;
       }
 
-      #inspector-container {
-
+      .box {
+        width: max-content;
+        padding: .5rem;
+        border: 1px solid black;
+        font-family: monospace;
+        height: fit-content;
       }
 
       #component-log, #inspector, #global-settings {
-        height: fit-content;
         pointer-events: auto;
-        border: 1px solid black;
         padding: .5rem;
-        font-family: monospace;
 
         -webkit-touch-callout: none; /* iOS Safari */
           -webkit-user-select: none; /* Safari */
@@ -265,10 +266,9 @@
       <button onclick="togglePlaying()" id="play">play</button>
       <button onclick="setPlayheadTime(totalTime)" name="toend" title="move playhead to the end of the track"></button>
       <div class="grow"></div>
-      <button onclick="createProjectFile()">export project</button>
-      <button onclick="createRecordingFile()">export recording</button>
       <button onclick="this.nextElementSibling.click()">import</button>
       <input class="gone" type="file" name="avatar" accept="text/plain, .txtrec, .txtstudio" onchange="readFile(this)">
+      <button onclick="toggleGone(ui.exportSettings, this)">export</button>
       <button onclick="toggleGone(ui.globalSettings, this)">settings</button>
     </div>
     <div id="timeline-info" class="noclick noselect"></div>
@@ -276,8 +276,15 @@
       <div id="timeline-ruler"></div>
       <div id="playhead"></div>
     </div>
-    <div class="flex column noclick">
-      <div id="global-settings" class="gone">
+
+    <div class="flex">
+      <div id="export-settings" class="box gone">
+        EXPORT<br><br>
+        <button onclick="createProjectFile()">export project</button>
+        <button onclick="createRecordingFile()">export recording</button>
+      </div>
+      <div id="global-settings" class="box gone">
+        SETTINGS<br><br>
         <button name="startRecordOnInput">start recording on keydown</button>
         <button name="printConversation">print conversation</button>
         <button name="monospacedOutput">terminal style</button>
@@ -288,16 +295,15 @@
         <span id="firefox-warning" class="gone"><br><br>파이어폭스는 한글 키입력을 못 읽는 듯합니다. 다른 브라우저를 사용하길 권합니다 :(</span>
       </div>
     </div>
-
-  <div id="inspector-container" class="flex">
-    <div id="component-log" class="flex column"></div>
-    <div id="inspector">
+    <div id="inspector-container" class="flex">
+    <div id="component-log" class="box flex column"></div>
+    <div id="inspector" class="box">
       <div id="track-inspector">TRACK INSPECTOR
 
 <button name="mute" class="serif">mute</button> <button name="lock" class="serif">lock</button>
 
 PLAYHEAD: <input type="number" name="playhead" value="0"> ms
-(numbers here are more accurate.)
+          (numbers here are more accurate.)
 
           <button disabled name="delete" class="serif">delete track</button></div>
 
@@ -327,14 +333,13 @@ TRIM LENGTH: <input type="number" name="trim-length" value="0"> ms
 GLOBAL TIMESTAMP: <input type="number" name="global" value="0"> ms
 
                   <button name="delete" class="serif">delete event</button></div>
+      </div>
     </div>
-  </div>
 
   </body>
 
   <script type="text/javascript" src="js/hangul.min.js"></script>
   <script type="text/javascript" src="js/toolbox.js"></script>
-  <script type="text/javascript" src="js/track.js"></script>
   <script type="text/javascript" src="js/simulator.js"></script>
 
   <script type="text/javascript" src="js/engine/event.js"></script>

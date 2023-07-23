@@ -1,5 +1,6 @@
 const ui = {
   globalSettings: document.getElementById("global-settings"),
+  exportSettings: document.getElementById("export-settings"),
 
   playButton: document.getElementById("play"),
   recordButton: document.getElementById("record"),

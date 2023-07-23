@@ -1,4 +1,7 @@
 function init() {
+  conversation = new Conversation();
+  new Track();
+  
   initSettings({
     minClipWidth: 10,
     startRecordOnInput: false,
@@ -7,9 +10,6 @@ function init() {
     printConversation: true,
     monospacedOutput: false
   });
-
-  conversation = new Conversation();
-  new Track();
 
   tick();
 }
@@ -33,13 +33,17 @@ function initSettings(settingData) {
         };
       }
     }
-    settings[setting] = settingData[setting];
+    changeSetting(setting, settingData[setting]);
   }
 }
 
 function toggleSetting(settingName, button) {
   button.toggleAttribute("checked");
-  settings[settingName] = button.getAttribute("checked") != null;
+  changeSetting(settingName, button.getAttribute("checked") != null);
+}
+
+function changeSetting(settingName, value) {
+  settings[settingName] = value;
 
   switch (settingName) {
     case "printConversation":
