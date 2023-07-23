@@ -1,6 +1,6 @@
 # live text recording studio
 
-(⚠️ This README is a work in progress! ⚠️)
+⚠️ This README is a work in progress! ⚠️
 
 This live text recording studio ('text studio' for short) is a tool for creating realtime text input recordings and conversations. It's inspired by online typing tests and text message conversations I've had with my friends over the years.
 
@@ -35,6 +35,7 @@ Each track has an **input simulator** that runs in the background and determines
 - CapsLock
 - Alt, Escape
 - Arrow keys
+- Home, End
 
 #### Implemented keyboard functions
 
@@ -44,14 +45,14 @@ Each track has an **input simulator** that runs in the background and determines
 - **Meta**, **Control**: Stops key input
   - **CMD+A** / **CTRL+A**: Selects the entire text
 - **Arrow keys**: Affects caret position and text selection
+- **Home** / **End**: Affects caret position and text selection
 
 ### Conversation
 
-The **conversation**, when turned on, is a log of all cleared text. Within the settings menu, the relevant settings are \[print conversation\] and \[clear on enter\]. If you're recording a monologue, it might help to turn these off. (Note: when conversations are turned off, they also won't be exported in the recording data.)
+The **conversation**, when turned on, is a log of all cleared text. Within the settings menu, the relevant setting is \[print conversation\]. If you're recording a monologue, it might help to turn this off. (Note: when conversations are turned off, they won't be exported in the recording data.)
 
 ## Keyboard shortcuts
 
-- **Backspace**: You can delete the currently selected event/clip/track by hitting backspace. The program will prompt you about whether or not you're sure. (There's also a delete button at the bottom of every inspector menu. However, those buttons won't ask you for a confirmation.) Make sure to only delete something if you're sure, because you cannot undo it.
+- **Backspace** / **Delete**: You can delete the currently selected event/clip/track by hitting backspace. The program will prompt you about whether or not you're sure. (There's also a delete button at the bottom of every inspector menu. However, those buttons won't ask you for a confirmation.) Make sure to only delete something if you're sure, because you cannot undo it.
 
 ## Exporting
-

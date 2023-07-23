@@ -68,7 +68,7 @@ class Simulator {
 
         switch (e.key) {
           case "Enter":
-            if (settings.clearWithEnter) {
+            if (settings.printConversation) {
               if (copy.textContent != "") {
                 copy.clearedText.push(copy.textContent);
                 copy.clearedText.push(timeStamp);
@@ -97,6 +97,7 @@ class Simulator {
           case "Escape":
             break;
 
+          case "Home":
           case "ArrowUp":
             if (state.shiftKey) {
               if (copy.selectionStart != 0) {
@@ -110,6 +111,7 @@ class Simulator {
             }
             break;
 
+          case "End":
           case "ArrowDown":
             if (state.shiftKey) {
               if (copy.selectionEnd != text.length) {
@@ -145,6 +147,7 @@ class Simulator {
               }
             }
             break;
+
           case "ArrowRight":
             if (state.shiftKey) {
               if (start == end) {

@@ -15,12 +15,16 @@
   flex-grow: 1;
 }
 
+html {
+  font-family: serif;
+  font-size: 15px;
+}
+
 body {
   margin: auto;
   padding: .5rem;
   max-width: 50rem;
   min-width: 30rem;
-  font-family: serif;
 }
 
 #timeline-info {

@@ -4,7 +4,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js" integrity="sha512-csNcFYJniKjJxRWRV1R7fvnXrycHP6qDR21mgz1ZP55xY5d+aHLfo9/FcGDQLfn2IfngbAHd8LdfsagcCqgTcQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <meta charset="utf-8">
     <title>text studio</title>
-    <link rel="stylesheet" href="css/inputsim.css">
+    <link rel="stylesheet" href="css/simulator.css">
     <style media="screen">
       h1 {
         scale: 1 1.5;
@@ -121,12 +121,15 @@
         background: white;
       }
 
+      #inspector-container {
+
+      }
+
       #component-log, #inspector, #global-settings {
-        max-height: 10rem;
+        height: fit-content;
         pointer-events: auto;
         border: 1px solid black;
         padding: .5rem;
-        overflow-y: scroll;
         font-family: monospace;
 
         -webkit-touch-callout: none; /* iOS Safari */
@@ -139,6 +142,8 @@
       }
 
       #component-log {
+        max-height: 18rem;
+        overflow-y: scroll;
         width: 100%;
       }
       #component-log div:first-child {
@@ -231,9 +236,24 @@
       .gone {
         display: none;
       }
+
+      a[target="_blank"]::after {
+        content: "↗"
+      }
+
+      @supports ( -moz-appearance:none ) {
+        #firefox-warning {
+          display: block !important;
+        }
+      }
     </style>
   </head>
   <body>
+
+    <div style="position: absolute; top: .5rem; right: .5rem;">
+      <a href="https://github.com/quewon/studio#live-text-recording-studio" target="_blank">guide</a>
+      <a href="https://github.com/quewon/studio" target="_blank">github</a>
+    </div>
 
     <header class="noclick noselect">
       <h2 style="margin-bottom: 0; margin-left: 1.5rem; font-style: italic;">quewon's</h2>
@@ -260,20 +280,20 @@
     <div class="flex column noclick" style="margin-bottom: .5rem;">
       <div id="global-settings" class="gone">
         <button name="startRecordOnInput">start recording on keydown</button>
-        <button name="clearWithEnter">clear with enter</button>
         <button name="printConversation">print conversation</button>
         <button name="monospacedOutput">terminal style</button>
         <button name="assembleHangul">한글 인풋 지원 | hangul input support</button>
         <br><br>
-        thanks to <a href="https://github.com/e-/Hangul.js" target="_blank">Hangul.js</a>!<br><br>
-        파이어폭스는 한글 키입력을 못 읽는 듯합니다. 다른 브라우저를 사용하길 권합니다 :(
-      </div>
-      <div class="flex">
-        <div id="component-log" class="flex column">
+        thanks to <a href="https://github.com/e-/Hangul.js" target="_blank">Hangul.js</a>!
 
-        </div>
-        <div id="inspector" class="flex column">
-        <div id="track-inspector">TRACK INSPECTOR
+        <span id="firefox-warning" class="gone"><br><br>파이어폭스는 한글 키입력을 못 읽는 듯합니다. 다른 브라우저를 사용하길 권합니다 :(</span>
+      </div>
+    </div>
+
+  <div id="inspector-container" class="flex">
+    <div id="component-log" class="flex column"></div>
+    <div id="inspector">
+      <div id="track-inspector">TRACK INSPECTOR
 
 <button name="mute" class="serif">mute</button> <button name="lock" class="serif">lock</button>
 
@@ -282,7 +302,7 @@ PLAYHEAD: <input type="number" name="playhead" value="0"> ms
 
           <button disabled name="delete" class="serif">delete track</button></div>
 
-        <div id="clip-inspector">CLIP INSPECTOR
+      <div id="clip-inspector">CLIP INSPECTOR
 
 <button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart)" title="move playhead to start of clip">|←</button> <button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart + clipSelected.trimmedTime)" title="move playhead to end of clip">→|</button> <button class="serif" onclick="clipSelected.setStartTime(playheadTime - clipSelected.trimStart)">move to playhead</button> <button class="serif" onclick="clipSelected.split(playheadTime)" title="split clip at playhead">split</button> <button name="duplicate" class="serif" title="duplicate clip at playhead">duplicate</button>
 <button class="serif" onclick="prepareJoin(this)" title="start merging clips together" name="join">merge mode</button>
@@ -295,7 +315,7 @@ TRIM LENGTH: <input type="number" name="trim-length" value="0"> ms
 
              <button name="delete" class="serif">delete clip</button></div>
 
-        <div id="event-inspector">EVENT INSPECTOR
+      <div id="event-inspector">EVENT INSPECTOR
 
 <button class="serif" onclick="setPlayheadTime(eventBeingEdited.clip.startTime + eventBeingEdited.localTimeStamp)" title="move playhead to event location">↓</button> <button class="serif" onclick="clipSelected.split(eventBeingEdited.clip.startTime + eventBeingEdited.localTimeStamp)" title="events on the boundary end up on the left clip">split clip here</button>
 
@@ -308,15 +328,21 @@ TRIM LENGTH: <input type="number" name="trim-length" value="0"> ms
 GLOBAL TIMESTAMP: <input type="number" name="global" value="0"> ms
 
                   <button name="delete" class="serif">delete event</button></div>
-        </div>
-      </div>
     </div>
+  </div>
 
   </body>
 
   <script type="text/javascript" src="js/hangul.min.js"></script>
   <script type="text/javascript" src="js/toolbox.js"></script>
   <script type="text/javascript" src="js/track.js"></script>
-  <script type="text/javascript" src="js/inputsim.js"></script>
-  <script type="text/javascript" src="js/engine.js"></script>
+  <script type="text/javascript" src="js/simulator.js"></script>
+
+  <script type="text/javascript" src="js/engine/event.js"></script>
+  <script type="text/javascript" src="js/engine/clip.js"></script>
+  <script type="text/javascript" src="js/engine/track.js"></script>
+  <script type="text/javascript" src="js/engine/ui.js"></script>
+  <script type="text/javascript" src="js/engine/inspector.js"></script>
+  <script type="text/javascript" src="js/engine/data.js"></script>
+  <script type="text/javascript" src="js/engine/engine.js"></script>
 </html>
