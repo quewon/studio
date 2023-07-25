@@ -83,6 +83,8 @@ Each track has an **input simulator** that runs in the background and determines
 - **Arrow keys**: Affects caret position and text selection
 - **Home**, **End**: Affects caret position and text selection
 
+(If there's a keyboard function you'd like me to add, feel free to shoot me a message or let me know in the [issues](https://github.com/quewon/studio/issues) board!)
+
 ### Conversation
 
 The **conversation**, when enabled, is a log of all cleared text. You can toggle it on and off in the settings menu using the \[print conversation\] button. If you're recording a monologue, it might help to turn this off. (Note: when conversations are off, they won't be exported in the recording data.)
