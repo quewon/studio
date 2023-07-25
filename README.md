@@ -8,16 +8,16 @@ The text studio interface is similar to that of an audio or video editing progra
 
 - [Menu Bar](#menu-bar)
 - [Timeline](#timeline)
-- - [Components](#components)
+  - [Components](#components)
   - [Timeline actions](#timeline-actions)
 - [Inspector](#inspector)
 - [Output](#output)
-- - [Simulator](#simulator)
-  - - [Keys that have been accounted for](#keys-that-have-been-accounted-for)
+  - [Simulator](#simulator)
+    - [Keys that have been accounted for](#keys-that-have-been-accounted-for)
     - [Implemented keyboard functions](#implemented-keyboard-functions)
   - [Conversation](#conversation)
 - [Exporting](#exporting)
-- - [Baking](#baking)
+  - [Baking](#baking)
 
 ## Menu Bar
 
