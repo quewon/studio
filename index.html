@@ -7,13 +7,18 @@
     <link rel="stylesheet" href="css/simulator.css">
     <style media="screen">
       h1 {
+        font-size: 2.5rem;
         scale: 1 1.5;
+      }
+      h2 {
+        font-size: 2rem;
       }
       h1, h2 {
         margin: 0;
+        font-family: serif;
       }
       header {
-        margin-bottom: .5rem;
+        margin-bottom: 1rem;
       }
 
       #timeline {
@@ -124,7 +129,6 @@
         width: max-content;
         padding: .5rem;
         border: 1px solid black;
-        font-family: monospace;
         height: fit-content;
       }
 
@@ -152,6 +156,8 @@
       #component-log button {
         color: black;
         text-align: left;
+        font-family: monospace;
+        font-size: inherit;
       }
       #component-log button.trimmed {
         border-color: lightgray;
@@ -229,12 +235,13 @@
         cursor: ew-resize;
       }
 
-      .serif {
-        font-family: serif;
-      }
-
       .gone {
         display: none;
+      }
+
+      .monospace {
+        font-family: monospace;
+        font-size: inherit;
       }
 
       a[target="_blank"]::after {
@@ -296,43 +303,45 @@
       </div>
     </div>
     <div id="inspector-container" class="flex">
-    <div id="component-log" class="box flex column"></div>
+    <div id="component-log" class="monospace box flex column"></div>
     <div id="inspector" class="box">
       <div id="track-inspector">TRACK INSPECTOR
 
-<button name="mute" class="serif">mute</button> <button name="lock" class="serif">lock</button>
-
+<div class="flex wrap">
+  <button name="mute">mute</button> <button name="lock">lock</button>
+</div>
 PLAYHEAD: <input type="number" name="playhead" value="0"> ms
           (numbers here are more accurate.)
 
-          <button disabled name="delete" class="serif">delete track</button></div>
+          <button disabled name="delete">delete track</button></div>
 
       <div id="clip-inspector">CLIP INSPECTOR
 
-<button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart)" title="move playhead to start of clip">|←</button> <button class="serif" onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart + clipSelected.trimmedTime)" title="move playhead to end of clip">→|</button> <button class="serif" onclick="clipSelected.setStartTime(playheadTime - clipSelected.trimStart)">move to playhead</button> <button class="serif" onclick="clipSelected.split(playheadTime)" title="split clip at playhead">split</button> <button name="duplicate" class="serif" title="duplicate clip at playhead">duplicate</button>
-<button class="serif" onclick="prepareJoin(this)" title="start merging clips together" name="join">merge mode</button>
-
+<div class="flex wrap">
+  <button onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart)" title="move playhead to start of clip">|←</button> <button onclick="setPlayheadTime(clipSelected.startTime + clipSelected.trimStart + clipSelected.trimmedTime)" title="move playhead to end of clip">→|</button> <button onclick="clipSelected.setStartTime(playheadTime - clipSelected.trimStart)">move to playhead</button> <button onclick="clipSelected.split(playheadTime)" title="split clip at playhead">split</button> <button name="duplicate" title="duplicate clip at playhead">duplicate</button><button onclick="prepareJoin(this)" title="start merging clips together" name="join">merge mode</button>
+</div>
   TIMESTAMP: <input type="number" name="timestamp" value="0"> ms
      LENGTH: <span name="length"></span> ms
 
  TRIM START: <input type="number" name="trim-start" value="0"> ms
 TRIM LENGTH: <input type="number" name="trim-length" value="0"> ms
 
-             <button name="delete" class="serif">delete clip</button></div>
+             <button name="delete">delete clip</button></div>
 
       <div id="event-inspector">EVENT INSPECTOR
 
-<button class="serif" onclick="setPlayheadTime(eventBeingEdited.clip.startTime + eventBeingEdited.localTimeStamp)" title="move playhead to event location">↓</button> <button class="serif" onclick="clipSelected.split(eventBeingEdited.clip.startTime + eventBeingEdited.localTimeStamp)" title="events on the boundary end up on the left clip">split clip here</button>
-
-            TYPE: <button name="keydown" checked>keydown</button> <button name="keyup">keyup</button>
+<div class="flex wrap">
+  <button onclick="setPlayheadTime(eventBeingEdited.clip.startTime + eventBeingEdited.localTimeStamp)" title="move playhead to event location">↓</button> <button onclick="clipSelected.split(eventBeingEdited.clip.startTime + eventBeingEdited.localTimeStamp)" title="events on the boundary end up on the left clip">split clip here</button>
+</div>
+            TYPE: <button class="monospace" name="keydown" checked>keydown</button> <button class="monospace" name="keyup">keyup</button>
 
             CODE: <span name="code">a</span>
-             KEY: <span name="key">a</span> <button name="listen" class="serif">listen</button> <span name="listening"><i>listening...</i></span>
+             KEY: <span name="key">a</span> <button name="listen">listen</button> <span name="listening"><i>listening...</i></span>
 
  LOCAL TIMESTAMP: <input type="number" name="local" value="0"> ms
 GLOBAL TIMESTAMP: <input type="number" name="global" value="0"> ms
 
-                  <button name="delete" class="serif">delete event</button></div>
+                  <button name="delete">delete event</button></div>
       </div>
     </div>
 

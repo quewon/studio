@@ -1,7 +1,7 @@
 function init() {
   conversation = new Conversation();
   new Track();
-  
+
   initSettings({
     minClipWidth: 10,
     startRecordOnInput: false,
@@ -57,9 +57,9 @@ function changeSetting(settingName, value) {
 
     case "monospacedOutput":
       if (settings.monospacedOutput) {
-        document.body.classList.add("monospace");
+        document.body.classList.add("terminal");
       } else {
-        document.body.classList.remove("monospace");
+        document.body.classList.remove("terminal");
       }
       break;
   }

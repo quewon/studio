@@ -2,6 +2,9 @@
   --lightergray: rgb(230, 230, 230);
   --togglepink: rgba(255, 0, 0, .1);
   --messageblue: #6392c2;
+
+  --sans-serif: sans-serif;
+  --sans-serif-size: 1.05rem;
 }
 
 .flex {
@@ -11,13 +14,16 @@
 .flex.column {
   flex-direction: column;
 }
+.flex.wrap {
+  flex-wrap: wrap;
+}
 .flex .grow {
   flex-grow: 1;
 }
 
 html {
-  font-family: serif;
-  font-size: 15px;
+  font-family: monospace;
+  font-size: 14px;
 }
 
 body {
@@ -25,10 +31,6 @@ body {
   padding: .5rem;
   max-width: 50rem;
   min-width: 30rem;
-}
-
-#timeline-info {
-  font-family: monospace;
 }
 
 #playhead {
@@ -56,6 +58,7 @@ body {
 button {
   font-size: inherit;
   font-family: inherit;
+
   cursor: pointer;
   word-break: break-word;
   white-space: pre-wrap;
@@ -100,8 +103,8 @@ button[name='toend']::before {
 }
 
 .output {
-  font-family: sans-serif;
-  font-size: .9rem;
+  font-family: var(--sans-serif);
+  font-size: var(--sans-serif-size);
   white-space: pre-wrap;
   word-break: break-word;
   pointer-events: none;
@@ -134,14 +137,10 @@ body.playing .output .caret:empty {
   color: black;
 }
 
-body.monospace .output {
-  font-family: monospace;
-  font-size: inherit;
-}
-body.monospace .output .caret:empty {
+body.terminal .output .caret:empty {
   animation: unset;
 }
-body.monospace .output .caret:empty::before {
+body.terminal .output .caret:empty::before {
   content: "_";
   width: fit-content;
   overflow: hidden;
@@ -158,8 +157,8 @@ body.monospace .output .caret:empty::before {
   display: flex;
   flex-direction: column;
   gap: .25rem;
-  font-family: sans-serif;
-  font-size: .9rem;
+  font-family: var(--sans-serif);
+  font-size: var(--sans-serif-size);
 
   border-bottom: 1px solid gray;
   /* border-radius: 5px; */
@@ -169,10 +168,15 @@ body.monospace .output .caret:empty::before {
   overflow-y: scroll;
 }
 
-body.monospace .conversation {
-  font-family: monospace;
+body.terminal .conversation {
+  font-family: inherit;
   font-size: inherit;
   gap: 0;
+}
+
+body.terminal .output {
+  font-family: inherit;
+  font-size: inherit;
 }
 
 .dialogue {
@@ -194,7 +198,7 @@ body.dragging .dialogue {
   animation: unset;
 }
 
-body.monospace .dialogue {
+body.terminal .dialogue {
   max-width: 100%;
   width: 100%;
   animation: unset;
@@ -210,7 +214,7 @@ body.monospace .dialogue {
   color: gray;
 }
 
-body.monospace .typing {
+body.terminal .typing {
   display: none;
 }
 
